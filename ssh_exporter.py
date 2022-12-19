@@ -142,11 +142,6 @@ metrics = gdict(
 class Time2Second(
     metaclass=type('', (type,), {'__call__': lambda *a: type.__call__(*a)()})
 ):
-    """
-    Copied from "https://github.com/gqylpy/gqylpy-time"
-    Copyright (c) 2019 GQYLPY <http://gqylpy.com>
-    SPDX-License-Identifier: Apache-2.0
-    """
     matcher = re.compile(r'''^
         (?:(\d+(?:\.\d+)?)y)?
         (?:(\d+(?:\.\d+)?)d)?
@@ -203,9 +198,12 @@ def init_ssh_connection(node: gdict) -> gdict:
 
     for param in set(node) - {
         *inspect.signature(GqylpySSH.connect).parameters,
-        'cmd_timeout', 'auto_sudo', 'reconnect'
+        'command_timeout', 'auto_sudo', 'reconnect'
     }:
         not_ssh_params[param] = node.pop(param)
+
+    asynchronous: bool = \
+        sys._getframe().f_back.f_code.co_name == 'init_ssh_connection_async'
 
     try:
         ssh = GqylpySSH(ip, **node)
@@ -214,12 +212,12 @@ def init_ssh_connection(node: gdict) -> gdict:
         for param, value in not_ssh_params.items():
             node[param] = value
 
-        if sys._getframe().f_back.f_code.co_name == 'init_ssh_connection_async':
+        if asynchronous:
             raise e
 
         glog.warning(
-            f'SSH connection to "{ip}" failed, will switch to background try '
-            'until succeed.'
+            f'SSH connection to "{ip}" failed, '
+            'will switch to background try until succeed.'
         )
         async_init_ssh_connection(node)
         return node
@@ -236,40 +234,48 @@ def init_ssh_connection(node: gdict) -> gdict:
     for param, value in not_ssh_params.items():
         node[param] = value
 
-    glog.info(f'SSH connection to "{ip}" has been established.')
+    if not asynchronous:
+        glog.info(f'SSH connection to "{ip}" has been established.')
+
     return node
 
 
 def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
     __nodes__.append(node)
-    if 'InitSSHConnectionAsync' not in (
+    if 'InitSSHConnectionAsync' in (
             child_thread.name for child_thread in threading.enumerate()
     ):
-        def init_ssh_connection_async():
-            time.sleep(10)
-            i = -1
-            while __nodes__:
-                try:
-                    n: gdict = __nodes__[i]
-                except IndexError:
-                    time.sleep(10)
-                    i = -1
-                    n: gdict = __nodes__[i]
-                try:
-                    init_ssh_connection(n)
-                except (
-                        SSHException, NoValidConnectionsError,
-                        TimeoutError, OSError
-                ):
-                    glog.warning(f'try SSH connection to "{n.ip}" failed once.')
-                    i -= 1
-                else:
-                    __nodes__.remove(n)
-        threading.Thread(
-            target=init_ssh_connection_async,
-            name  ='InitSSHConnectionAsync',
-            daemon=True
-        ).start()
+        return
+
+    def init_ssh_connection_async():
+        time.sleep(10)
+        i = -1
+        while __nodes__:
+            try:
+                n: gdict = __nodes__[i]
+            except IndexError:
+                time.sleep(10)
+                i = -1
+                n: gdict = __nodes__[i]
+            try:
+                init_ssh_connection(n)
+            except (
+                    SSHException, NoValidConnectionsError,
+                    TimeoutError, OSError
+            ):
+                glog.warning(f'try SSH connection to "{n.ip}" failed once.')
+                i -= 1
+            else:
+                glog.info(
+                    f'try SSH connection to "{n.ip}" has been established.'
+                )
+                __nodes__.remove(n)
+
+    threading.Thread(
+        target=init_ssh_connection_async,
+        name  ='InitSSHConnectionAsync',
+        daemon=True
+    ).start()
 
 
 def init_metrics_wrapper(metric_list: list) -> list:
@@ -414,6 +420,7 @@ config_struct = DataStruct({
                 },
                 'timeout': {
                     type    : (int, str),
+                    coerce  : int,
                     default : 30,
                     env     : 'SSH_CONNECT_TIMEOUT',
                     option  : '--ssh-connect-timeout',
@@ -422,6 +429,7 @@ config_struct = DataStruct({
                 },
                 'command_timeout': {
                     type    : (int, str),
+                    coerce  : int,
                     default : 10,
                     env     : 'SSH_COMMAND_TIMEOUT',
                     option  : '--ssh-command-timeout',
@@ -494,7 +502,7 @@ config_struct = DataStruct({
     },
     'output_config': {
         type   : bool,
-        default: False,
+        default: True,
         params : [delete_empty]
     }
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
@@ -535,7 +543,6 @@ class Collector(metaclass=gqylpy_cache):
         for line in lines:
             front, back = line[:point], line[point:]
             front.append(' '.join(back))
-            # front.append(line[point] + ' ...')
             yield dict(zip(titles, front))
 
     __not_cache__ = [output2dict]
@@ -733,6 +740,7 @@ class MetricsHandler:
                 ssh: GqylpySSH = node.ssh
             except KeyError:
                 continue
+
             collector_config: gdict = node.get('collector', cnf.collector)
 
             cpu     = CPUCollector    (ssh, config=collector_config)
@@ -749,7 +757,14 @@ class MetricsHandler:
                         disk   =disk,
                         network=network
                     )
-                # SSHException
+                except (SSHException, TimeoutError):
+                    glog.warning(
+                        f'SSH connection to "{node.ip}" is break, '
+                        'will try re-establish until succeed.'
+                    )
+                    del node.ssh, node.hostname
+                    async_init_ssh_connection(node)
+                    break
                 except Exception as e:
                     glog.error({
                         'msg'   : 'get metric error.',
