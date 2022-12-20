@@ -40,101 +40,137 @@ from typing import Generator
 
 metrics = gdict(
     ssh_cpu_utilization={
+        'type'         : 'Gauge',
         'documentation': 'utilization of cpu used',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_cpu_utilization_user={
+        'type'         : 'Gauge',
         'documentation': 'utilization of cpu used by user',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_cpu_utilization_system={
+        'type'         : 'Gauge',
         'documentation': 'utilization of cpu used by system',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_cpu_utilization_top5={
+        'type'         : 'Gauge',
         'documentation': 'utilization top 5 of cpu used by process',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'pid',
-                          'command'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id',  'device_name', 'pid',
+            'command'
+        )
     },
     ssh_cpu_percentage_wait={
+        'type'         : 'Gauge',
         'documentation': 'percentage of cpu wait',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_cpu_percentage_idle={
+        'type'         : 'Gauge',
         'documentation': 'percentage of cpu idle',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_memory_utilization={
+        'type'         : 'Gauge',
         'documentation': 'utilization of memory used',
-        'labelnames': ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type': 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_memory_utilization_top5={
+        'type'         : 'Gauge',
         'documentation': 'utilization top 5 of memory used by process',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'pid',
-                          'command'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'pid',
+            'command'
+        )
     },
     ssh_memory_utilization_swap={
+        'type'         : 'Gauge',
         'documentation': 'utilization of swap memory used',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_memory_available_bytes={
+        'type'         : 'Gauge',
         'documentation': 'available of memory in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_memory_available_swap_bytes={
+        'type'         : 'Gauge',
         'documentation': 'available of swap memory in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
     },
     ssh_disk_utilization={
+        'type'         : 'Gauge',
         'documentation': 'utilization of mount point',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'device',
-                          'fstype', 'mountpoint'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device',
+            'fstype', 'mountpoint'
+        )
     },
     ssh_disk_used_bytes={
+        'type'         : 'Gauge',
         'documentation': 'used of mount point in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'device',
-                          'fstype', 'mountpoint'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device',
+            'fstype', 'mountpoint'
+        )
     },
     ssh_disk_available_bytes={
+        'type'         : 'Gauge',
         'documentation': 'available of mount point in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'device',
-                          'fstype', 'mountpoint'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device',
+            'fstype', 'mountpoint'
+        )
     },
     ssh_disk_read_bytes_total={
+        'type'         : 'Gauge',
         'documentation': 'total disk read size in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'device'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device'
+        )
     },
     ssh_disk_write_bytes_total={
+        'type'         : 'Gauge',
         'documentation': 'total disk write size in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id', 'device'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device'
+        )
     },
     ssh_network_receive_bytes_total={
+        'type'         : 'Gauge',
         'documentation': 'total interface receive in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id',
-                          'interface'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name',
+            'interface'
+        )
     },
     ssh_network_transmit_bytes_total={
+        'type'         : 'Gauge',
         'documentation': 'total interface transmit in bytes',
-        'labelnames'   : ('hostname', 'hostuuid', 'ip', 'device_id',
-                          'interface'),
-        'type'         : 'Gauge'
+        'labelnames'   : (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name',
+            'interface'
+        )
     }
 )
 
@@ -453,6 +489,10 @@ config_struct = DataStruct({
                 },
                 'device_id': {
                     type   : (int, str),
+                    default: 0
+                },
+                'device_name': {
+                    type: str,
                     default: ''
                 },
                 'metrics': {
@@ -499,11 +539,6 @@ config_struct = DataStruct({
         set     : tuple(metrics),
         params  : [delete_empty],
         callback: lambda x: delete_unused_metrics(init_metrics_wrapper(x))
-    },
-    'output_config': {
-        type   : bool,
-        default: True,
-        params : [delete_empty]
     }
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
 
@@ -517,7 +552,8 @@ def output_config():
         config.metrics[i] = wrapper._name
 
     for node in config.nodes:
-        node.ssh = str(node.ssh)
+        if 'ssh' in node:
+            node.ssh = str(node.ssh)
         if 'metrics' in node:
             node.metrics = [wrapper._name for wrapper in node.metrics]
 
@@ -787,10 +823,11 @@ class MetricsHandler:
     ) -> None:
         v: float = cpu.utilization
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -803,10 +840,11 @@ class MetricsHandler:
     ) -> None:
         v: str = cpu.utilization_user
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -819,10 +857,11 @@ class MetricsHandler:
     ) -> None:
         v: str = cpu.utilization_system
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -835,12 +874,13 @@ class MetricsHandler:
     ) -> None:
         for top in cpu.utilization_top5:
             wrapper.labels(
-                hostname =node.hostname,
-                hostuuid =node.hostuuid,
-                ip       =node.ip,
-                device_id=node.device_id,
-                pid      =top['PID'],
-                command  =top['COMMAND']
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                pid        =top['PID'],
+                command    =top['COMMAND']
             ).set(top['%CPU'])
 
     @staticmethod
@@ -853,10 +893,11 @@ class MetricsHandler:
     ) -> None:
         v: str = cpu.percentage_idle
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -869,10 +910,11 @@ class MetricsHandler:
     ) -> None:
         v: str = cpu.percentage_wait
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -885,10 +927,11 @@ class MetricsHandler:
     ) -> None:
         v: float = memory.utilization
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -901,12 +944,13 @@ class MetricsHandler:
     ) -> None:
         for top in memory.utilization_top5:
             wrapper.labels(
-                hostname =node.hostname,
-                hostuuid =node.hostuuid,
-                ip       =node.ip,
-                device_id=node.device_id,
-                pid      =top['PID'],
-                command  =top['COMMAND']
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                pid        =top['PID'],
+                command    =top['COMMAND']
             ).set(top['%MEM'])
 
     @staticmethod
@@ -919,10 +963,11 @@ class MetricsHandler:
     ) -> None:
         v: float = memory.utilization_swap
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -935,10 +980,11 @@ class MetricsHandler:
     ) -> None:
         v: int = memory.available_bytes
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -951,10 +997,11 @@ class MetricsHandler:
     ) -> None:
         v: int = memory.available_swap_bytes
         wrapper.labels(
-            hostname =node.hostname,
-            hostuuid =node.hostuuid,
-            ip       =node.ip,
-            device_id=node.device_id
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
         ).set(v)
 
     @staticmethod
@@ -967,13 +1014,14 @@ class MetricsHandler:
     ) -> None:
         for i, v in enumerate(disk.utilization_of_mountpoint):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                device    =disk.filesystems[i],
-                fstype    =disk.filesystem_types[i],
-                mountpoint=disk.mountpoints[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                device     =disk.filesystems[i],
+                fstype     =disk.filesystem_types[i],
+                mountpoint =disk.mountpoints[i]
             ).set(v)
 
     @staticmethod
@@ -986,13 +1034,14 @@ class MetricsHandler:
     ) -> None:
         for i, v in enumerate(disk.used_bytes_of_mountpoint):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                device    =disk.filesystems[i],
-                fstype    =disk.filesystem_types[i],
-                mountpoint=disk.mountpoints[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                device     =disk.filesystems[i],
+                fstype     =disk.filesystem_types[i],
+                mountpoint =disk.mountpoints[i]
             ).set(v)
 
     @staticmethod
@@ -1005,13 +1054,14 @@ class MetricsHandler:
     ) -> None:
         for i, v in enumerate(disk.available_bytes_of_mountpoint):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                device    =disk.filesystems[i],
-                fstype    =disk.filesystem_types[i],
-                mountpoint=disk.mountpoints[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                device     =disk.filesystems[i],
+                fstype     =disk.filesystem_types[i],
+                mountpoint =disk.mountpoints[i]
             ).set(v)
 
     @staticmethod
@@ -1024,11 +1074,12 @@ class MetricsHandler:
     ) -> None:
         for i, v in enumerate(disk.read_bytes_total):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                device      =disk.disks[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                device     =disk.disks[i]
             ).set(v)
 
     @staticmethod
@@ -1039,13 +1090,14 @@ class MetricsHandler:
             disk:    DiskCollector,
             **other_collectors
     ) -> None:
-        for i, v in enumerate(disk.read_bytes_total):
+        for i, v in enumerate(disk.write_bytes_total):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                device      =disk.disks[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                device     =disk.disks[i]
             ).set(v)
 
     @staticmethod
@@ -1058,11 +1110,12 @@ class MetricsHandler:
     ) -> None:
         for i, v in enumerate(network.receive_bytes_total):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                interface =network.interfaces[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                interface  =network.interfaces[i]
             ).set(v)
 
     @staticmethod
@@ -1075,11 +1128,12 @@ class MetricsHandler:
     ) -> None:
         for i, v in enumerate(network.transmit_bytes_total):
             wrapper.labels(
-                hostname  =node.hostname,
-                hostuuid  =node.hostuuid,
-                ip        =node.ip,
-                device_id =node.device_id,
-                interface =network.interfaces[i]
+                hostname   =node.hostname,
+                hostuuid   =node.hostuuid,
+                ip         =node.ip,
+                device_id  =node.device_id,
+                device_name=node.device_name,
+                interface  =network.interfaces[i]
             ).set(v)
 
 
@@ -1091,9 +1145,7 @@ if __name__ == '__main__':
 
     cnf = gdict(user_config, title=os.path.basename(basedir), basedir=basedir)
     config_struct.verify(cnf)
-
-    if cnf.output_config:
-        output_config()
+    output_config()
 
     index = b'''
         <!DOCTYPE html>
