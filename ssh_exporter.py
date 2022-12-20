@@ -354,8 +354,6 @@ re_ip     = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
 re_domain = r'^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$'
 
 config_struct = DataStruct({
-    'title': {type: str},
-    'basedir': {type: str},
     'server': {
         branch: {
             'host': {
@@ -544,7 +542,7 @@ config_struct = DataStruct({
 
 
 def output_config():
-    config = copy.deepcopy(cnf)
+    config: gdict = copy.deepcopy(cnf)
 
     config.server = str(config.server)
 
@@ -793,7 +791,7 @@ class MetricsHandler:
                         disk   =disk,
                         network=network
                     )
-                except (SSHException, TimeoutError):
+                except (SSHException, TimeoutError, OSError):
                     glog.warning(
                         f'SSH connection to "{node.ip}" is break, '
                         'will try re-establish until succeed.'
@@ -1143,7 +1141,7 @@ if __name__ == '__main__':
     with open(os.path.join(basedir, 'config.yml'), encoding='utf8') as f:
         user_config: dict = yaml.safe_load(f)
 
-    cnf = gdict(user_config, title=os.path.basename(basedir), basedir=basedir)
+    cnf = gdict(user_config)
     config_struct.verify(cnf)
     output_config()
 
