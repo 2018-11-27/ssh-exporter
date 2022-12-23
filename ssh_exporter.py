@@ -194,7 +194,7 @@ class Time2Second(
     def __init__(self, unit_time: str, /):
         self.unit_time = unit_time
 
-    def __call__(self) -> int or float:
+    def __call__(self) -> int | float:
         if self.unit_time.__class__ in (int, float):
             return self.unit_time
         elif self.unit_time.isdigit():
@@ -204,7 +204,7 @@ class Time2Second(
         return self.y * y + self.d * d + self.h * h + self.m * m + s
 
     @staticmethod
-    def g(x: str) -> int or float:
+    def g(x: str) -> int | float:
         if not x:
             return 0
         try:
@@ -796,7 +796,7 @@ class MetricsHandler:
                         f'SSH connection to "{node.ip}" is break, '
                         'will try re-establish until succeed.'
                     )
-                    del node.ssh, node.hostname
+                    del node.ssh, node.hostname, node.hostuuid
                     async_init_ssh_connection(node)
                     break
                 except Exception as e:
