@@ -793,8 +793,9 @@ class MetricsHandler:
                     )
                 except (SSHException, TimeoutError, OSError):
                     glog.warning(
-                        f'SSH connection to "{node.ip}" is break, '
-                        'will try re-establish until succeed.'
+                        f'SSH connection to "{node.ip}" is break, will try '
+                        f're-establish until succeed, always skip this node '
+                        f'during this period.'
                     )
                     del node.ssh, node.hostname, node.hostuuid
                     async_init_ssh_connection(node)
@@ -807,9 +808,15 @@ class MetricsHandler:
                         'e'     : e
                     })
 
-        for wrapper in metrics.values():
-            yield generate_latest(wrapper)
-            wrapper.clear()
+        for w in metrics.values():
+            try:
+                yield generate_latest(w)
+            except Exception as e:
+                wrappers = list(metrics.values())
+                for ww in wrappers[wrappers.index(w):]:
+                    ww.clear()
+                raise e
+            w.clear()
 
     @staticmethod
     def get_ssh_cpu_utilization(
