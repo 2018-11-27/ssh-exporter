@@ -1,0 +1,160 @@
+releaseStatistic:
+  image: harbor.lenovo.com/base/statistic:latest
+  stage: statistic
+  allow_failure: true
+  variables:
+    BASE_STATISTICS_REPORT_PROJECT_HTTP: "https://igitlab.lenovo.com/devops/statistic-report.git"
+    BASE_STATISTICS_REPORT_FILE: "statistic-code-lines.csv"
+    BASE_STATISTICS_REPORT_TITLE: "repository-url-http,ref,line-quantities,remark"
+  rules: !reference [.defaultRules, branches]
+  script:
+    # You should add or modify your Statistic commands in this scope
+    # Start
+    - |-
+      if [ "$statisticEnabled" = false ];
+      then
+        echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Statistic stage sucessfully"
+        exit 0;
+      fi
+      PROJECT_DIR=`echo $BASE_STATISTICS_REPORT_PROJECT_HTTP | awk -F'/' '{print $NF}' | sed 's/.git//g'`
+      mkdir -p $PROJECT_DIR && rm -rf $PROJECT_DIR
+      export RES=0
+      export GREP_RES=0
+      export SED_RES=0
+      git clone $BASE_STATISTICS_REPORT_PROJECT_HTTP -b $CI_COMMIT_REF_NAME || export RES=128
+      echo $RES
+      if [ "$RES" == "128" ]; then
+        git clone $BASE_STATISTICS_REPORT_PROJECT_HTTP
+        cd $PROJECT_DIR && git checkout -b $CI_COMMIT_REF_NAME
+      fi
+      cd $CI_PROJECT_DIR
+      if [ ! -f "$PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE" ]; then
+        touch $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
+        echo "$BASE_STATISTICS_REPORT_TITLE" >> $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
+      fi
+      export CI_PROJECT_LINES=`git ls-files | xargs cat | wc -l`
+      grep $CI_PROJECT_URL $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export GREP_RES=1
+      if [ "$GREP_RES" == "1" ]
+      then
+        echo "$CI_PROJECT_URL/-/tree/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" >> \
+        $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
+      else
+        sed -i "s#^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME.*#$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."#g" \
+        $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
+        # sed -i "/^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME/c$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" \
+      fi
+      cat $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
+      if [ "$SED_RES" != "1" ]; then
+        cd $PROJECT_DIR
+        echo `pwd`
+        git add .
+        git commit -a -m "Auto-Statistic $CI_COMMIT_REF_NAME In $CI_PROJECT_URL Line-Quantities" || echo "Git Commit Successfully"
+        git push --set-upstream origin $CI_COMMIT_REF_NAME 
+      fi
+      rm -rf $CI_PROJECT_DIR/$PROJECT_DIR || echo "Git Push $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE Successfully"
+      echo "Please View The Statistics Report To ${BASE_STATISTICS_REPORT_PROJECT_HTTP%*.git}/-/tree/$CI_COMMIT_REF_NAME/$BASE_STATISTICS_REPORT_FILE"
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Statistic stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+
+masterStatistic:
+  image: harbor.lenovo.com/base/statistic:latest
+  stage: statistic
+  allow_failure: true
+  variables:
+    BASE_STATISTICS_REPORT_PROJECT_HTTP: "https://igitlab.lenovo.com/devops/statistic-report.git"
+    BASE_STATISTICS_REPORT_FILE: "statistic-code-lines.csv"
+    BASE_STATISTICS_REPORT_TITLE: "repository-url-http,ref,line-quantities,remark"
+  script:
+    # You should add or modify your Statistic commands in this scope
+    # Start
+    - |-
+      if [ "$statisticEnabled" = false ];
+      then
+        echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Statistic stage sucessfully"
+        exit 0;
+      fi
+      PROJECT_DIR=`echo $BASE_STATISTICS_REPORT_PROJECT_HTTP | awk -F'/' '{print $NF}' | sed 's/.git//g'`
+      mkdir -p $PROJECT_DIR && rm -rf $PROJECT_DIR
+      export RES=0
+      export GREP_RES=0
+      export SED_RES=0
+      git clone $BASE_STATISTICS_REPORT_PROJECT_HTTP -b $CI_COMMIT_REF_NAME || export RES=128
+      echo $RES
+      if [ "$RES" == "128" ]; then
+        git clone $BASE_STATISTICS_REPORT_PROJECT_HTTP
+        cd $PROJECT_DIR && git checkout -b $CI_COMMIT_REF_NAME
+      fi
+      cd $CI_PROJECT_DIR
+      if [ ! -f "$PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE" ]; then
+        touch $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
+        echo "$BASE_STATISTICS_REPORT_TITLE" >> $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
+      fi
+      export CI_PROJECT_LINES=`git ls-files | xargs cat | wc -l`
+      grep $CI_PROJECT_URL $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export GREP_RES=1
+      if [ "$GREP_RES" == "1" ]
+      then
+        echo "$CI_PROJECT_URL/-/tree/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" >> \
+        $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
+      else
+        sed -i "s#^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME.*#$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."#g" \
+        $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
+        # sed -i "/^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME/c$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" \
+      fi
+      cat $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
+      if [ "$SED_RES" != "1" ]; then
+        cd $PROJECT_DIR
+        echo `pwd`
+        git add .
+        git commit -a -m "Auto-Statistic $CI_COMMIT_REF_NAME In $CI_PROJECT_URL Line-quantities" || echo "Git Commit Successfully"
+        git push --set-upstream origin $CI_COMMIT_REF_NAME 
+      fi
+      rm -rf $CI_PROJECT_DIR/$PROJECT_DIR || echo "Git Push $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE Successfully"
+      echo "Please View The Statistics Report To ${BASE_STATISTICS_REPORT_PROJECT_HTTP%*.git}/-/tree/$CI_COMMIT_REF_NAME/$BASE_STATISTICS_REPORT_FILE"
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Statistic stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - master
+    - template
+
+#stageStatistic:
+#  image: harbor.lenovo.com/base/statistic:latest
+#  stage: statistic
+#  allow_failure: true
+#  variables:
+#    BASE_STATISTICS_REPORT_PROJECT: devops/statistic-report
+#  script:
+#    # You should add or modify your Statistic commands in this scope
+#    # Start
+#    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Statistic stage sucessfully"
+#    # End
+#  tags:
+#    - mec-runner
+#  only:
+#    - staging
+#    - /^staging-.*$/
+#
+#othersStatistic:
+#  image: harbor.lenovo.com/base/statistic:latest
+#  stage: statistic
+#  allow_failure: true
+#  variables:
+#    BASE_STATISTICS_REPORT_PROJECT: devops/statistic-report
+#  script:
+#    # You should add or modify your Statistic commands in this scope
+#    # Start
+#    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Statistic stage sucessfully"
+#    # End
+#  tags:
+#    - mec-runner
+#  except:
+#    - master
+#    - /^staging-.*$/
+#    - staging
+#    - lecp-id
+#    - /^release-.*$/
+#    - merge_requests
+#    - staging

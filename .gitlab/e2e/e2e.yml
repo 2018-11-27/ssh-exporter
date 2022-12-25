@@ -1,0 +1,124 @@
+releaseE2e:
+  image: $BASE_E2E_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: e2e
+  allow_failure: true
+  rules: !reference [.defaultRules, branches]
+  tags:
+    - mec-runner
+  script:
+    # You should add your e2e commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
+    # End
+
+masterE2e:
+  image: $BASE_E2E_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: e2e
+  allow_failure: true
+  only:
+    - master
+  tags:
+    - mec-runner
+  script:
+    # You should add your e2e commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
+    # End
+
+mRE2e:
+  image: $BASE_E2E_IMAGE
+  stage: e2e
+  only:
+    - merge_requests
+  tags:
+    - mec-runner
+  retry: 2
+  variables:
+    e2eVersion: $CI_COMMIT_SHORT_SHA
+    BASE_E2E_RUNNER_IMAGE: harbor.lenovo.com/lecp/e2-runner:latest
+  script:
+    # You should add your e2e commands in this scope
+    # Start
+    - echo "start project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage"
+    - |-
+      bash
+      set -x
+      if [[ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" =~ ^release-.*$ ]] || [[ "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" = "master" ]]; then
+          echo "merge request target branch "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME
+      else
+          echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
+          exit 0
+      fi
+
+      export DOCKER_HOST=$DOCKER_HOST
+      docker run \
+              -d \
+              --rm \
+              --pull=always \
+              --network host \
+              --entrypoint /bin/bash \
+              $BASE_E2E_RUNNER_IMAGE \
+              -c \
+              "\
+              chmod +x /bin/sleep \
+              && sleep 100000 \
+              " > ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+      docker exec -e PROJECT_NAME=$CI_PROJECT_PATH_SLUG -e MR_TARGET_BRANCH=$CI_MERGE_REQUEST_TARGET_BRANCH_NAME `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA` \
+                bash -c \
+                "\
+                export DOCKER_HOST=$DOCKER_HOST \
+                && cd /opt/healthcheck  \
+                && python3 run.py $artifactFullNames:$e2eVersion > /tmp/log-$CI_PROJECT_ID-$CI_COMMIT_REF_SLUG-$CI_PIPELINE_ID \
+                && echo $? > /tmp/$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA \
+                && ls -lrt /tmp && cat /tmp/$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA \
+                "
+      docker cp \
+        `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA`:/tmp/$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA \
+      $CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
+      runStatus=`cat $CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA`
+      if [ $runStatus -ne 0 ]; then
+        docker cp `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA`:/tmp/log-$CI_PROJECT_ID-$CI_COMMIT_REF_SLUG-$CI_PIPELINE_ID \
+                                                                                  log-$CI_PROJECT_ID-$CI_COMMIT_REF_SLUG-$CI_PIPELINE_ID
+        cat log-$CI_PROJECT_ID-$CI_COMMIT_REF_SLUG-$CI_PIPELINE_ID
+
+        docker stop `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA` \
+        && docker rm `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA` -f
+        echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage Failed"
+        exit -1
+      fi
+      docker stop `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA` \
+      && docker rm `cat ID-$CI_PIPELINE_ID-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA` -f
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
+
+    # End
+
+stagingE2e:
+  image: $BASE_E2E_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: e2e
+  allow_failure: true
+  only:
+    - /^staging-.*$/
+  tags:
+    - mec-runner
+  script:
+    # You should add your e2e commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
+    # End
+
+othersE2e:
+  image: $BASE_E2E_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: e2e
+  allow_failure: true
+  except:
+    - master
+    - /^staging-.*$/
+    - /^release-.*$/
+    - merge_requests
+  tags:
+    - mec-runner
+  script:
+    # You should add your e2e commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
+    # End

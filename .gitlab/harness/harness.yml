@@ -1,0 +1,74 @@
+releaseHarness:
+  image: $BASE_HARNESS_IMAGE #harbor.lenovo.com/base/harness:latest
+  stage: harness
+  rules: !reference [.defaultRules, branches]
+  script:
+  # You should add or modify your harness commands in this scope
+  # Start
+  # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Harness stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+
+masterHarness:
+  image: $BASE_HARNESS_IMAGE #harbor.lenovo.com/base/harness:latest
+  stage: harness
+  script:
+  # You should add or modify your harness commands in this scope
+  # Start
+  # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Harness stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - master
+
+mRHarness:
+  image: $BASE_HARNESS_IMAGE #harbor.lenovo.com/base/harness:latest
+  stage: harness
+  script:
+  # You should add or modify your harness commands in this scope
+  # Start
+  # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Harness stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - merge_requests
+
+stagingHarness:
+  image: $BASE_HARNESS_IMAGE #harbor.lenovo.com/base/harness:latest
+  stage: harness
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+  # You should add or modify your harness commands in this scope
+  # Start
+  # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Harness stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - /^staging-.*$/
+
+othersHarness:
+  image: $BASE_HARNESS_IMAGE  #harbor.lenovo.com/base/harness:latest
+  stage: harness
+  script:
+  # You should add or modify your harness commands in this scope
+  # Start
+  # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Harness stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  except:
+    - master
+    - /^staging-.*$/
+    - lecp-id
+    - /^release-.*$/
+    - merge_requests

@@ -1,0 +1,92 @@
+releaseConfig:
+  image: $BASE_CONFIG_IMAGE #harbor.lenovo.com/base/config:latest
+  stage: config
+  rules: !reference [.defaultRules, branches]
+  script:
+    # You should add or modify your config commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Config stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+
+masterConfig:
+  image: $BASE_CONFIG_IMAGE #harbor.lenovo.com/base/config:latest
+  stage: config
+  variables:
+    artifactVersion: $release
+  script:
+    # You should add or modify your config commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Config stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - master
+
+mRConfig:
+  image: $BASE_CONFIG_IMAGE #harbor.lenovo.com/base/config:latest
+  stage: config
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your config commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Config stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - merge_requests
+
+stagingConfig:
+  image: $BASE_CONFIG_IMAGE #harbor.lenovo.com/base/config:latest
+  stage: config
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your config commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Config stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - /^staging-.*$/
+
+lecpIdConfig:
+  image: $BASE_CONFIG_IMAGE #harbor.lenovo.com/base/config:latest
+  stage: config
+  variables:
+    release: lecp-id-$CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your config commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Config stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - lecp-id
+
+othersConfig:
+  image: $BASE_CONFIG_IMAGE  #harbor.lenovo.com/base/config:latest
+  stage: config
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your config commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Config stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  except:
+    - master
+    - /^staging-.*$/
+    - lecp-id
+    - /^release-.*$/
+    - merge_requests

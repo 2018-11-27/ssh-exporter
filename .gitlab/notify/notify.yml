@@ -1,0 +1,188 @@
+releaseNotify:
+  image: $BASE_NOTIFY_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: notify
+  rules: !reference [.defaultRules, branches]
+  variables:
+    #Your notify message template that you should named by yourself
+    messageTemplate: "Your $CI_COMMIT_SHA for $CI_COMMIT_REF_SLUG of $CI_PROJECT_NAME have executed completely.\n
+                      Please refer the following information: \n
+                        1、Your Up-Stream Pipeline is $upStreamPipeline
+                        2、Your Scanner Report locates at http://isonar.lenovo.com/project/issues?id=$CI_PROJECT_NAME:$CI_PROJECT_ID&resolved=false \n
+                        3、Your Unit Test Report locates at http://isonar.lenovo.com/dashboard?id=$CI_PROJECT_NAME:$CI_PROJECT_ID \n
+                        4、Your Artifact locate at $publishFullName:$publishVersion \n
+                        5、Your E2e Report at {#FixMe} \n
+                        6、Your Artifact is Deployed In $DESTINATION_CLUSTER_IP \n
+                        7、Your Inspect Status: $inspectStatus \n
+                        8、Your Deploy Report locate at {#fixme}"
+  script:
+    # You should add or modify your notify commands in this scope
+    # Start
+    # - fixme
+    - echo $messageTemplate
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Notify stage sucessfully"
+  # - send notification commands
+    # End
+  tags:
+    - mec-runner
+
+  # you can also set rules always to allow that all conditions been executed
+
+
+masterNotify:
+  image: $BASE_NOTIFY_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: notify
+  variables:
+    #Your notify message template that you should named by yourself
+    messageTemplate: "Your $CI_COMMIT_SHA for $CI_COMMIT_REF_SLUG of $CI_PROJECT_NAME have executed completely.\n
+                        Please refer the following information: \n
+                          1、Your Up-Stream Pipeline is $upStreamPipeline
+                          2、Your Scanner Report locate at http://isonar.lenovo.com/project/issues?id=$CI_PROJECT_NAME:$CI_PROJECT_ID&resolved=false \n
+                          3、Your Unit Test Report locate at http://isonar.lenovo.com/dashboard?id=$CI_PROJECT_NAME:$CI_PROJECT_ID \n
+                          4、Your Artifact locate at $publishFullName:$publishVersion \n
+                          5、Your E2e Report at {#FixMe} \n
+                          6、Your Artifact is Deployed In $DESTINATION_CLUSTER_IP \n
+                          7、Your Inspect Status: $inspectStatus \n
+                          8、Your Deploy Report locate at {#fixme}"
+  script:
+    # You should add or modify your notify commands in this scope
+    # Start
+    # - fixme
+    - echo $messageTemplate
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Notify stage sucessfully"
+  # - send notification commands
+    # End
+  tags:
+    - mec-runner
+  # you can also set rules always to allow that all conditions been executed
+  # rules:
+  #   - when: always
+  only:
+    - master
+
+mRNotify:
+  image: $BASE_NOTIFY_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: notify
+  variables:
+    #Your notify message template that you should named by yourself
+    messageTemplate: "Your $CI_COMMIT_SHA for $CI_COMMIT_REF_SLUG of $CI_PROJECT_NAME have executed completely.\n
+                        Please refer the following information: \n
+                          1、Your Up-Stream Pipeline is $upStreamPipeline
+                          2、Your Scanner Report locate at http://isonar.lenovo.com/project/issues?id=$CI_PROJECT_NAME:$CI_PROJECT_ID&resolved=false \n
+                          3、Your Unit Test Report locate at http://isonar.lenovo.com/dashboard?id=$CI_PROJECT_NAME:$CI_PROJECT_ID \n
+                          4、Your Artifact locate at $publishFullName:$publishVersion \n
+                          5、Your E2e Report at {#FixMe} \n
+                          6、Your Artifact is Deployed In $DESTINATION_CLUSTER_IP \n
+                          7、Your Inspect Status: $inspectStatus \n
+                          8、Your Deploy Report locate at {#fixme}"
+  script:
+    # You should add or modify your notify commands in this scope
+    # Start
+    # - fixme
+    - echo $messageTemplate
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Notify stage sucessfully"
+  # - send notification commands
+    # End
+  tags:
+    - mec-runner
+  # you can also set rules always to allow that all conditions been executed
+  # rules:
+  #   - when: always
+  only:
+    - merge_requests
+
+stagingNotify:
+  image: $BASE_NOTIFY_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: notify
+  variables:
+    #Your notify message template that you should named by yourself
+    messageTemplate: "Your $CI_COMMIT_SHA for $CI_COMMIT_REF_SLUG of $CI_PROJECT_NAME have executed completely.\n
+                        Please refer the following information: \n
+                          1、Your Up-Stream Pipeline is $upStreamPipeline
+                          2、Your Scanner Report locate at http://isonar.lenovo.com/project/issues?id=$CI_PROJECT_NAME:$CI_PROJECT_ID&resolved=false \n
+                          3、Your Unit Test Report locate at http://isonar.lenovo.com/dashboard?id=$CI_PROJECT_NAME:$CI_PROJECT_ID \n
+                          4、Your Artifact locate at $publishFullName:$publishVersion \n
+                          5、Your E2e Report at {#FixMe} \n
+                          6、Your Artifact is Deployed In $DESTINATION_CLUSTER_IP \n
+                          7、Your Inspect Status: $inspectStatus \n
+                          8、Your Deploy Report locate at {#fixme}"
+  script:
+    # You should add or modify your notify commands in this scope
+    # Start
+    # - fixme
+    - echo $messageTemplate
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Notify stage sucessfully"
+  # - send notification commands
+    # End
+  tags:
+    - mec-runner
+  # you can also set rules always to allow that all conditions been executed
+  # rules:
+  #   - when: always
+  only:
+    - /^staging-.*$/
+
+lecpIdNotify:
+  image: $BASE_NOTIFY_IMAGE #harbor.lenovo.com/base/notify:latest
+  stage: notify
+  variables:
+    #Your notify message template that you should named by yourself
+    messageTemplate: "Your $CI_COMMIT_SHA for $CI_COMMIT_REF_SLUG of $CI_PROJECT_NAME have executed completely.\n
+                        Please refer the following information: \n
+                          1、Your Up-Stream Pipeline is $upStreamPipeline
+                          2、Your Scanner Report locate at http://isonar.lenovo.com/project/issues?id=$CI_PROJECT_NAME:$CI_PROJECT_ID&resolved=false \n
+                          3、Your Unit Test Report locate at http://isonar.lenovo.com/dashboard?id=$CI_PROJECT_NAME:$CI_PROJECT_ID \n
+                          4、Your Artifact locate at $publishFullName:$publishVersion \n
+                          5、Your E2e Report at {#FixMe} \n
+                          6、Your Artifact is Deployed In $DESTINATION_CLUSTER_IP \n
+                          7、Your Inspect Status: $inspectStatus \n
+                          8、Your Deploy Report locate at {#fixme}"
+  script:
+    # You should add or modify your notify commands in this scope
+    # Start
+    # - fixme
+    - echo $messageTemplate
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Notify stage sucessfully"
+  # - send notification commands
+    # End
+  tags:
+    - mec-runner
+  # you can also set rules always to allow that all conditions been executed
+  # rules:
+  #   - when: always
+  only:
+    - lecp-id
+
+othersNotify:
+  image: $BASE_NOTIFY_IMAGE  #harbor.lenovo.com/base/notify:latest
+  stage: notify
+  variables:
+    #Your notify message template that you should named by yourself
+    messageTemplate: "Your $CI_COMMIT_SHA for $CI_COMMIT_REF_SLUG of $CI_PROJECT_NAME have executed completely.\n
+                        Please refer the following information: \n
+                          1、Your Up-Stream Pipeline is $upStreamPipeline
+                          2、Your Scanner Report locate at http://isonar.lenovo.com/project/issues?id=$CI_PROJECT_NAME:$CI_PROJECT_ID&resolved=false \n
+                          3、Your Unit Test Report locate at http://isonar.lenovo.com/dashboard?id=$CI_PROJECT_NAME:$CI_PROJECT_ID \n
+                          4、Your Artifact locate at $publishFullName:$publishVersion \n
+                          5、Your E2e Report at {#FixMe} \n
+                          6、Your Artifact is Deployed In $DESTINATION_CLUSTER_IP \n
+                          7、Your Inspect Status: $inspectStatus \n
+                          8、Your Deploy Report locate at {#fixme}"
+  script:
+    # You should add or modify your notify commands in this scope
+    # Start
+    # - fixme
+    - echo $messageTemplate
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Notify stage sucessfully"
+  # - send notification commands
+    # End
+  tags:
+    - mec-runner
+  # you can also set rules always to allow that all conditions been executed
+  # rules:
+  #   - when: always
+  except:
+    - master
+    - /^staging-.*$/
+    - lecp-id
+    - /^release-.*$/
+    - merge_requests

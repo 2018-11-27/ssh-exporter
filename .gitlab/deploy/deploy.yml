@@ -1,0 +1,121 @@
+releaseDeploy:
+  image: $BASE_DEPLOY_IMAGE #harbor.lenovo.com/base/deploy:latest
+  stage: deploy
+  allow_failure: true
+  rules: !reference [.defaultRules, branches]
+  script:
+  # You should add or modify your deploy commands in this scope
+  # Start
+  # - fixme
+    - |-
+      array=(`echo $destinationClusters | tr ',' ' '` )
+      echo "$array"
+      for host in ${array[@]}
+      do
+        echo "$host $destinationHostDomainName" >> /etc/hosts
+        kubectl apply -f $BASE_KUBE_RESOURCE_PATH/ -n $namespace --kubeconfig=$BASE_KUBE_CONFIG_PATH/$host
+      done
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Deploy stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+
+masterDeploy:
+  image: $BASE_DEPLOY_IMAGE #harbor.lenovo.com/base/deploy:latest
+  stage: deploy
+  allow_failure: true
+  script:
+  # You should add or modify your deploy commands in this scope
+  # Start
+  # - fixme
+    - |-
+      array=(`echo $destinationClusters | tr ',' ' '` )
+      echo "$array"
+      for host in ${array[@]}
+      do
+        echo "$host $destinationHostDomainName" >> /etc/hosts
+        kubectl apply -f $BASE_KUBE_RESOURCE_PATH/ -n $namespace --kubeconfig=$BASE_KUBE_CONFIG_PATH/$host
+      done
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Deploy stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - master
+
+mRDeploy:
+  image: $BASE_DEPLOY_IMAGE #harbor.lenovo.com/base/deploy:latest
+  stage: deploy
+  allow_failure: true
+  script:
+  # You should add or modify your deploy commands in this scope
+  # Start
+  # - fixme
+    - |-
+      array=(`echo $destinationClusters | tr ',' ' '` )
+      echo "$array"
+      for host in ${array[@]}
+      do
+        echo "$host $destinationHostDomainName" >> /etc/hosts
+        kubectl apply -f $BASE_KUBE_RESOURCE_PATH/ -n $namespace --kubeconfig=$BASE_KUBE_CONFIG_PATH/$host
+      done
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Deploy stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - merge_requests
+
+stagingDeploy:
+  image: $BASE_DEPLOY_IMAGE #harbor.lenovo.com/base/deploy:latest
+  stage: deploy
+  allow_failure: true
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+  # You should add or modify your deploy commands in this scope
+  # Start
+  # - fixme
+    - |-
+      array=(`echo $destinationClusters | tr ',' ' '` )
+      echo "$array"
+      for host in ${array[@]}
+      do
+        echo "$host $destinationHostDomainName" >> /etc/hosts
+        kubectl apply -f $BASE_KUBE_RESOURCE_PATH/ -n $namespace --kubeconfig=$BASE_KUBE_CONFIG_PATH/$host
+      done
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Deploy stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - /^staging-.*$/
+    - staging
+
+othersDeploy:
+  image: $BASE_DEPLOY_IMAGE  #harbor.lenovo.com/base/deploy:latest
+  stage: deploy
+  allow_failure: true
+  script:
+  # You should add or modify your deploy commands in this scope
+  # Start
+  # - fixme
+    - |-
+      array=(`echo $destinationClusters | tr ',' ' '` )
+      echo "$array"
+      for host in ${array[@]}
+      do
+        echo "$host $destinationHostDomainName" >> /etc/hosts
+        kubectl apply -f $BASE_KUBE_RESOURCE_PATH/ -n $namespace --kubeconfig=$BASE_KUBE_CONFIG_PATH/$host
+      done
+      echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Deploy stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  except:
+    - master
+    - /^staging-.*$/
+    - lecp-id
+    - /^release-.*$/
+    - merge_requests
+    - staging

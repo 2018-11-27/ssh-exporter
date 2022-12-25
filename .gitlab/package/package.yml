@@ -1,0 +1,111 @@
+variables: !reference [.defaultVariables, variables]
+releasePackage:
+  image: $BASE_PACKAGE_IMAGE #harbor.lenovo.com/base/package:latest
+  stage: package
+  variables:
+    #packageName: your package name that you should named by yourself
+    packageVersion: "1.0"
+  rules: !reference [.defaultRules, branches]
+#  rules:
+#    - if: $CI_COMMIT_REF_NAME == "release-1.1"
+#      variables: # Override packageVersion to 1.1 defined
+#        packageVersion: "1.1"
+#    - if: $CI_COMMIT_REF_NAME == "release-1.5"
+#      variables: # Override packageVersion to 1.5 defined
+#        packageVersion: "1.5"
+  script:
+    # You should add or modify your package commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Package stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+
+masterPackage:
+  image: $BASE_PACKAGE_IMAGE #harbor.lenovo.com/base/package:latest
+  stage: package
+  variables:
+    #packageName: your package name that you should named by yourself
+    packageVersion: "latest"
+  script:
+    # You should add or modify your package commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Package stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - master
+
+mRPackage:
+  image: $BASE_PACKAGE_IMAGE #harbor.lenovo.com/base/package:latest
+  stage: package
+  variables:
+    #packageName: your package name that you should named by yourself
+    packageVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your package commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Package stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - merge_requests
+
+stagingPackage:
+  image: $BASE_PACKAGE_IMAGE #harbor.lenovo.com/base/package:latest
+  stage: package
+  variables:
+    #packageName: your package name that you should named by yourself
+    packageVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your package commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Package stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - /^staging-.*$/
+
+lecpIdPackage:
+  image: $BASE_PACKAGE_IMAGE #harbor.lenovo.com/base/package:latest
+  stage: package
+  variables:
+    release: lecp-id-$CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your package commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Package stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - lecp-id
+
+othersPackage:
+  image: $BASE_PACKAGE_IMAGE  #harbor.lenovo.com/base/package:latest
+  stage: package
+  variables:
+    #packageName: your package name that you should named by yourself
+    pakcageName: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your package commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Package stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  except:
+    - master
+    - /^staging-.*$/
+    - lecp-id
+    - /^release-.*$/
+    - merge_requests

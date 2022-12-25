@@ -1,0 +1,85 @@
+releaseExternal:
+  image: $BASE_EXTERNAL_IMAGE #harbor.lenovo.com/base/external:latest
+  stage: external
+  rules: !reference [.defaultRules, branches]
+  script:
+    # You should add or modify your verify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG External stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+
+sonarqube:
+  image: $BASE_EXTERNAL_IMAGE #harbor.lenovo.com/base/external:latest
+  stage: external
+  script:
+    # You should add or modify your verify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG External stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  rules:
+    - when: always
+
+masterExternal:
+  image: $BASE_EXTERNAL_IMAGE #harbor.lenovo.com/base/external:latest
+  stage: external
+  script:
+    # You should add or modify your verify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG External stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - master
+
+mRExternal:
+  image: $BASE_EXTERNAL_IMAGE #harbor.lenovo.com/base/external:latest
+  stage: external
+  script:
+    # You should add or modify your verify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG External stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - merge_requests
+
+stagingExternal:
+  image: $BASE_EXTERNAL_IMAGE #harbor.lenovo.com/base/external:latest
+  stage: external
+  script:
+    # You should add or modify your verify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG External stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  only:
+    - /^staging-.*$/
+
+othersExternal:
+  image: $BASE_EXTERNAL_IMAGE  #harbor.lenovo.com/base/external:latest
+  stage: external
+  script:
+    # You should add or modify your verify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG External stage sucessfully"
+  # End
+  tags:
+    - mec-runner
+  except:
+    - master
+    - /^staging-.*$/
+    - /^release-.*$/
+    - merge_requests

@@ -1,0 +1,92 @@
+releaseSpecify:
+  image: $BASE_SPECIFY_IMAGE #harbor.lenovo.com/base/specify:latest
+  stage: specify
+  rules: !reference [.defaultRules, branches]
+  script:
+    # You should add or modify your specify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Specify stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+
+masterSpecify:
+  image: $BASE_SPECIFY_IMAGE #harbor.lenovo.com/base/specify:latest
+  stage: specify
+  variables:
+    artifactVersion: $release
+  script:
+    # You should add or modify your specify commands in this scope
+    # Start
+    # - fixme
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Specify stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - master
+
+mRSpecify:
+  image: $BASE_SPECIFY_IMAGE #harbor.lenovo.com/base/specify:latest
+  stage: specify
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your specify commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Specify stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - merge_requests
+
+stagingSpecify:
+  image: $BASE_SPECIFY_IMAGE #harbor.lenovo.com/base/specify:latest
+  stage: specify
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your specify commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Specify stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - /^staging-.*$/
+
+lecpIdSpecify:
+  image: $BASE_SPECIFY_IMAGE #harbor.lenovo.com/base/specify:latest
+  stage: specify
+  variables:
+    release: lecp-id-$CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your specify commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Specify stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  only:
+    - lecp-id
+
+othersSpecify:
+  image: $BASE_SPECIFY_IMAGE  #harbor.lenovo.com/base/specify:latest
+  stage: specify
+  variables:
+    artifactVersion: $CI_COMMIT_SHORT_SHA
+  script:
+    # You should add or modify your specify commands in this scope
+    # Start
+    - echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG Specify stage sucessfully"
+    # End
+  tags:
+    - mec-runner
+  except:
+    - master
+    - /^staging-.*$/
+    - lecp-id
+    - /^release-.*$/
+    - merge_requests
