@@ -25,6 +25,7 @@ metrics:
   - ssh_cpu_utilization_top5
   - ssh_cpu_percentage_wait
   - ssh_cpu_percentage_idle
+  - ssh_cpu_count
   - ssh_memory_utilization
   - ssh_memory_utilization_top5
   - ssh_memory_utilization_swap

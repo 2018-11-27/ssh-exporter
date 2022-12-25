@@ -82,6 +82,13 @@ metrics = gdict(
             'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
         )
     },
+    ssh_cpu_count={
+        'type': 'Gauge',
+        'documentation': 'number of cpu',
+        'labelnames': (
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name'
+        )
+    },
     ssh_memory_utilization={
         'type'         : 'Gauge',
         'documentation': 'utilization of memory used',
@@ -160,16 +167,14 @@ metrics = gdict(
         'type'         : 'Gauge',
         'documentation': 'total interface receive in bytes',
         'labelnames'   : (
-            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name',
-            'interface'
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device'
         )
     },
     ssh_network_transmit_bytes_total={
         'type'         : 'Gauge',
         'documentation': 'total interface transmit in bytes',
         'labelnames'   : (
-            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name',
-            'interface'
+            'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'device'
         )
     }
 )
@@ -194,7 +199,7 @@ class Time2Second(
     def __init__(self, unit_time: str, /):
         self.unit_time = unit_time
 
-    def __call__(self) -> int | float:
+    def __call__(self) -> 'int | float':
         if self.unit_time.__class__ in (int, float):
             return self.unit_time
         elif self.unit_time.isdigit():
@@ -204,7 +209,7 @@ class Time2Second(
         return self.y * y + self.d * d + self.h * h + self.m * m + s
 
     @staticmethod
-    def g(x: str) -> int | float:
+    def g(x: str) -> 'int | float':
         if not x:
             return 0
         try:
@@ -615,6 +620,12 @@ class CPUCollector(Collector):
         return self.output2dict(top5_processes)
 
     @property
+    def count(self) -> str:
+        return self.ssh.cmd('''
+            grep "physical id" /proc/cpuinfo | sort | uniq | wc -l
+        ''').output_else_raise()
+
+    @property
     def percentage_idle(self) -> str:
         return self.info['id']
 
@@ -808,6 +819,16 @@ class MetricsHandler:
                         'e'     : e
                     })
 
+        # for wrapper in metrics.values():
+        #     try:
+        #         yield generate_latest(wrapper)
+        #     except Exception as e:
+        #         glog.error({
+        #             'msg'   : 'generate latest error.',
+        #             'metric': wrapper._name,
+        #             'e'     : e
+        #         })
+        #     wrapper.clear()
         for w in metrics.values():
             try:
                 yield generate_latest(w)
@@ -914,6 +935,23 @@ class MetricsHandler:
             **other_collectors,
     ) -> None:
         v: str = cpu.percentage_wait
+        wrapper.labels(
+            hostname   =node.hostname,
+            hostuuid   =node.hostuuid,
+            ip         =node.ip,
+            device_id  =node.device_id,
+            device_name=node.device_name
+        ).set(v)
+
+    @staticmethod
+    def get_ssh_cpu_count(
+            wrapper: Gauge,
+            node:    gdict,
+            *,
+            cpu:     CPUCollector,
+            **other_collectors,
+    ) -> None:
+        v: str = cpu.count
         wrapper.labels(
             hostname   =node.hostname,
             hostuuid   =node.hostuuid,
@@ -1120,7 +1158,7 @@ class MetricsHandler:
                 ip         =node.ip,
                 device_id  =node.device_id,
                 device_name=node.device_name,
-                interface  =network.interfaces[i]
+                device     =network.interfaces[i]
             ).set(v)
 
     @staticmethod
@@ -1138,7 +1176,7 @@ class MetricsHandler:
                 ip         =node.ip,
                 device_id  =node.device_id,
                 device_name=node.device_name,
-                interface  =network.interfaces[i]
+                device     =network.interfaces[i]
             ).set(v)
 
 
