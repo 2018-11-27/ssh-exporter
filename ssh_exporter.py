@@ -353,6 +353,7 @@ params       = 'params'
 optional     = 'optional'
 delete_none  = 'delete_none'
 delete_empty = 'delete_empty'
+ignore_if_in = 'ignore_if_in'
 callback     = 'callback'
 
 re_ip     = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
@@ -518,7 +519,8 @@ config_struct = DataStruct({
                 }
             },
             callback: init_ssh_connection
-        }
+        },
+        ignore_if_in: [[]]
     },
     'collector': {
         branch: {
