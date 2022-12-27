@@ -708,23 +708,23 @@ class DiskCollector(Collector):
 
     @property
     def utilization_of_mountpoint(self) -> Generator:
-        yield from (info['Use%'][:-1] for info in self.info_of_mountpoint)
+        return (info['Use%'][:-1] for info in self.info_of_mountpoint)
 
     @property
     def used_bytes_of_mountpoint(self) -> Generator:
-        yield from (info['Used'] for info in self.info_of_mountpoint)
+        return (info['Used'] for info in self.info_of_mountpoint)
 
     @property
     def available_bytes_of_mountpoint(self) -> Generator:
-        yield from (info['Available'] for info in self.info_of_mountpoint)
+        return (info['Available'] for info in self.info_of_mountpoint)
 
     @property
     def read_bytes_total(self) -> Generator:
-        yield from (int(info[1]) / 2 * 1024 for info in self.info_of_disk)
+        return (int(info[1]) / 2 * 1024 for info in self.info_of_disk)
 
     @property
     def write_bytes_total(self) -> Generator:
-        yield from (int(info[2]) / 2 * 1024 for info in self.info_of_disk)
+        return (int(info[2]) / 2 * 1024 for info in self.info_of_disk)
 
     @property
     def filesystems(self) -> list:
@@ -759,11 +759,11 @@ class NetworkCollector(Collector):
 
     @property
     def receive_bytes_total(self) -> Generator:
-        yield from (info[1] for info in self.info)
+        return (info[1] for info in self.info)
 
     @property
     def transmit_bytes_total(self) -> Generator:
-        yield from (info[2] for info in self.info)
+        return (info[2] for info in self.info)
 
     @property
     def interfaces(self) -> list:
