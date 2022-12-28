@@ -1204,7 +1204,7 @@ if __name__ == '__main__':
                 <a href="/metrics">metrics</a>
             </body>
         </html>
-    '''
+    '''  #
 
     server: socket.socket = cnf.server
     rlist = [server]
