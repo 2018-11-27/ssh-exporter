@@ -36,7 +36,7 @@ from prometheus_client         import generate_latest
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.metrics import Gauge
 
-from typing import Generator
+from typing import Union, Generator
 
 metrics = gdict(
     ssh_cpu_utilization={
@@ -199,7 +199,7 @@ class Time2Second(
     def __init__(self, unit_time: str, /):
         self.unit_time = unit_time
 
-    def __call__(self) -> 'int | float':
+    def __call__(self) -> Union[int, float]:
         if self.unit_time.__class__ in (int, float):
             return self.unit_time
         elif self.unit_time.isdigit():
@@ -209,7 +209,7 @@ class Time2Second(
         return self.y * y + self.d * d + self.h * h + self.m * m + s
 
     @staticmethod
-    def g(x: str) -> 'int | float':
+    def g(x: str) -> Union[int, float]:
         if not x:
             return 0
         try:
@@ -658,7 +658,7 @@ class MemoryCollector(Collector):
         return self.output2dict(top5_processes)
 
     @property
-    def utilization_swap(self) -> float:
+    def utilization_swap(self) -> Union[float, int]:
         try:
             return 1 - (self.swap_free / self.swap_total)
         except ZeroDivisionError:
