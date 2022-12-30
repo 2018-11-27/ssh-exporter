@@ -8,7 +8,7 @@ COPY ssh_exporter.py requirements.txt $BASEDIR
 WORKDIR $BASEDIR
 
 RUN apk add --no-cache gcc freetds-dev libffi-dev libc-dev binutils make
-RUN pip install -r requirements.txt --trusted-host pip.lenovo.com -i http://pip.lenovo.com/repository/pypi-aliyun/simple/
+RUN pip install -r requirements.txt -i http://pip.lenovo.com/repository/pypi-aliyun/simple/ --trusted-host pip.lenovo.com
 
 EXPOSE 80
 

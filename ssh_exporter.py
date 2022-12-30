@@ -321,6 +321,14 @@ def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
     ).start()
 
 
+def init_ignore_fstype(ignore_fstype: Union[list, str]) -> str:
+    if ignore_fstype.__class__ is list:
+        x: str = ' -x '.join(ignore_fstype)
+    else:
+        x: str = ' -x '.join(i.strip() for i in ignore_fstype.split(','))
+    return '-x ' + x
+
+
 def init_metrics_wrapper(metric_list: list) -> list:
     for i, metric in enumerate(metric_list):
         config: gdict = metrics[metric]
@@ -503,12 +511,12 @@ config_struct = DataStruct({
     'collector': {
         branch: {
             'ignore_fstype': {
-                type: list,
-                default: ['tmpfs', 'devtmpfs', 'overlay'],
-                env: 'COLLECTOR_IGNORE_FSTYPE',
-                option: '--collector-ignore-fstype',
-                params: [delete_empty],
-                callback: lambda x: '-x ' + ' -x '.join(x)
+                type    : (list, str),
+                default : ['tmpfs', 'devtmpfs', 'overlay'],
+                env     : 'COLLECTOR_IGNORE_FSTYPE',
+                option  : '--collector-ignore-fstype',
+                params  : [delete_empty],
+                callback: init_ignore_fstype
             }
         },
         default: {
