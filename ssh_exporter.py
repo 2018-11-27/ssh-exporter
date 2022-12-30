@@ -248,8 +248,15 @@ def init_ssh_connection(node: gdict) -> gdict:
 
     try:
         ssh = GqylpySSH(ip, **node)
+
+        ssh.cmd('echo Hi, SSH Exporter')
+        node.hostname = ssh.cmd('hostname').output_else_raise()
+        node.hostuuid = ssh.cmd(
+            "dmidecode -t 1 | grep 'UUID: ' | awk '{print $NF}'"
+        ).output_else_raise()
     except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
         node.ip = ip
+
         for param, value in not_ssh_params.items():
             node[param] = value
 
@@ -258,16 +265,11 @@ def init_ssh_connection(node: gdict) -> gdict:
 
         glog.warning(
             f'SSH connection to "{ip}" failed, '
-            'will switch to background try until succeed.'
+            'will switch to asynchronous try until succeed.'
         )
+
         async_init_ssh_connection(node)
         return node
-
-    ssh.cmd('echo Hi, SSH Exporter')
-    node.hostname = ssh.cmd('hostname').output_else_raise()
-    node.hostuuid = ssh.cmd(
-        "dmidecode -t 1 | grep 'UUID: ' | awk '{print $NF}'"
-    ).output_else_raise()
 
     node.ssh = ssh
     node.ip  = ip
