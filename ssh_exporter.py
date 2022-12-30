@@ -362,30 +362,6 @@ re_ip     = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
 re_domain = r'^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$'
 
 config_struct = DataStruct({
-    'server': {
-        branch: {
-            'host': {
-                type   : str,
-                default: '0.0.0.0',
-                env    : 'HOST',
-                option : '--host',
-                verify : [re_ip, re_domain, lambda x: x == 'localhost'],
-                params : [delete_empty]
-            },
-            'port': {
-                type   : (int, str),
-                coerce : int,
-                default: 80,
-                env    : 'PORT',
-                option : '--port',
-                verify : lambda x: 0 < x < 65536,
-                params : [delete_empty]
-            }
-        },
-        default : {'host': '0.0.0.0', 'port': 80},
-        params  : [delete_empty],
-        callback: init_socket
-    },
     'log': {
         branch: {
             'level': {
@@ -546,6 +522,30 @@ config_struct = DataStruct({
         set     : tuple(metrics),
         params  : [delete_empty],
         callback: lambda x: delete_unused_metrics(init_metrics_wrapper(x))
+    },
+    'server': {
+        branch: {
+            'host': {
+                type: str,
+                default: '0.0.0.0',
+                env: 'HOST',
+                option: '--host',
+                verify: [re_ip, re_domain, lambda x: x == 'localhost'],
+                params: [delete_empty]
+            },
+            'port': {
+                type: (int, str),
+                coerce: int,
+                default: 80,
+                env: 'PORT',
+                option: '--port',
+                verify: lambda x: 0 < x < 65536,
+                params: [delete_empty]
+            }
+        },
+        default: {'host': '0.0.0.0', 'port': 80},
+        params: [delete_empty],
+        callback: init_socket
     }
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
 
