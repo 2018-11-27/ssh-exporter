@@ -5,6 +5,8 @@ Confidential and Proprietary
 @date: 2022.12.05 11:02:43
 @author: zhuyk4@lenovo.com
 """
+import gqylpy as __
+
 import os
 import re
 import sys
@@ -762,9 +764,15 @@ class DiskCollector(Collector):
 
     @property
     def info_of_disk(self) -> list:
-        return list(self.ssh.cmd('''
+        disks: list = self.ssh.cmd('''
+            lsblk -d -o name,type | grep " disk$" | awk '{print $1}'
+        ''').output_else_raise().splitlines()
+
+        disk_performance: Generator = self.ssh.cmd('''
             vmstat -d | grep -vE "^(disk| +?total)" | awk '{print $1, $4, $8}'
-        ''').line2list())
+        ''').line2list()
+
+        return [disk for disk in disk_performance if disk[0] in disks]
 
 
 class NetworkCollector(Collector):
@@ -831,16 +839,6 @@ class MetricsHandler:
                         'e'     : e
                     })
 
-        # for wrapper in metrics.values():
-        #     try:
-        #         yield generate_latest(wrapper)
-        #     except Exception as e:
-        #         glog.error({
-        #             'msg'   : 'generate latest error.',
-        #             'metric': wrapper._name,
-        #             'e'     : e
-        #         })
-        #     wrapper.clear()
         for w in metrics.values():
             try:
                 yield generate_latest(w)

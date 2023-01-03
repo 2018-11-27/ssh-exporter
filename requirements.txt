@@ -1,7 +1,7 @@
-prometheus_client >=0.15.0 ,<1.0
-gqylpy_ssh        >=1.2.1  ,<2.0
-gqylpy_datastruct >=2.2.1  ,<3.0
-gqylpy_cache      >=1.3.4  ,<2.0
-gqylpy_dict       >=1.1.3  ,<2.0
-gqylpy_log        >=1.0.2  ,<2.0
-PyYAML            >=6.0    ,<7.0
+prometheus_client>=0.15.0,<1.0
+gqylpy_ssh       >=1.2.2, <2.0
+gqylpy_datastruct>=2.2.2, <3.0
+gqylpy_cache     >=1.3.4, <2.0
+gqylpy_dict      >=1.1.3, <2.0
+gqylpy_log       >=1.0.2, <2.0
+PyYAML           >=6.0,   <7.0
