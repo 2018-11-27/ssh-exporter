@@ -584,22 +584,6 @@ class Collector(metaclass=gqylpy_cache):
         self.ssh    = ssh
         self.config = config
 
-    @staticmethod
-    def output2dict(output: str, /) -> Generator:
-        lines = ([
-            column.strip() for column in line.split()
-        ] for line in output.splitlines())
-
-        titles: list = next(lines)
-        point:  int  = len(titles) - 1
-
-        for line in lines:
-            front, back = line[:point], line[point:]
-            front.append(' '.join(back))
-            yield dict(zip(titles, front))
-
-    __not_cache__ = [output2dict]
-
 
 class CPUCollector(Collector):
     matcher = re.compile(
@@ -627,11 +611,10 @@ class CPUCollector(Collector):
 
     @property
     def utilization_top5(self) -> Generator:
-        top5_processes: str = self.ssh.cmd('''
+        return self.ssh.cmd('''
             ps aux --sort -pcpu | head -6 | 
             awk '{$1=$4=$5=$6=$7=$8=$9=$10=""; print $0}'
-        ''').output_else_raise()
-        return self.output2dict(top5_processes)
+        ''').table2dict()
 
     @property
     def count(self) -> str:
@@ -663,11 +646,10 @@ class MemoryCollector(Collector):
 
     @property
     def utilization_top5(self) -> Generator:
-        top5_processes: str = self.ssh.cmd('''
+        return self.ssh.cmd('''
             ps aux --sort -pmem | head -6 | 
             awk '{$1=$3=$5=$6=$7=$8=$9=$10=""; print $0}'
-        ''').output_else_raise()
-        return self.output2dict(top5_processes)
+        ''').table2dict()
 
     @property
     def utilization_swap(self) -> Union[float, int]:
@@ -1192,9 +1174,9 @@ class MetricsHandler:
 
 if __name__ == '__main__':
     basedir: str = os.path.dirname(os.path.abspath(__file__))
-
-    with open(os.path.join(basedir, 'config.yml'), encoding='utf8') as f:
-        user_config: dict = yaml.safe_load(f)
+    user_config: dict = yaml.safe_load(
+        open(os.path.join(basedir, 'config.yml'), encoding='utf8')
+    )
 
     cnf = gdict(user_config)
     config_struct.verify(cnf)
