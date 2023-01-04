@@ -67,7 +67,7 @@ metrics = gdict(
         'documentation': 'utilization top 5 of cpu used by process',
         'labelnames'   : (
             'hostname', 'hostuuid', 'ip', 'device_id',  'device_name', 'pid',
-            'command'
+            'command', 'args'
         )
     },
     ssh_cpu_percentage_wait={
@@ -103,7 +103,7 @@ metrics = gdict(
         'documentation': 'utilization top 5 of memory used by process',
         'labelnames'   : (
             'hostname', 'hostuuid', 'ip', 'device_id', 'device_name', 'pid',
-            'command'
+            'command', 'args'
         )
     },
     ssh_memory_utilization_swap={
@@ -584,6 +584,21 @@ class Collector(metaclass=gqylpy_cache):
         self.ssh    = ssh
         self.config = config
 
+    @staticmethod
+    def output2dict_for_utilization_top5(output: str, /) -> Generator:
+        lines = ([
+            column.strip() for column in line.split()
+        ] for line in output.splitlines())
+
+        title: list = next(lines)
+        point: int = len(title)
+        title.append('ARGS')
+
+        for line in lines:
+            front = line[:point]
+            front.append(' '.join(line[point:]))
+            yield dict(zip(title, front))
+
 
 class CPUCollector(Collector):
     matcher = re.compile(
@@ -611,10 +626,11 @@ class CPUCollector(Collector):
 
     @property
     def utilization_top5(self) -> Generator:
-        return self.ssh.cmd('''
+        top5_processes: str = self.ssh.cmd('''
             ps aux --sort -pcpu | head -6 | 
             awk '{$1=$4=$5=$6=$7=$8=$9=$10=""; print $0}'
-        ''').table2dict()
+        ''').output_else_raise()
+        return self.output2dict_for_utilization_top5(top5_processes)
 
     @property
     def count(self) -> str:
@@ -646,10 +662,11 @@ class MemoryCollector(Collector):
 
     @property
     def utilization_top5(self) -> Generator:
-        return self.ssh.cmd('''
+        top5_processes: str = self.ssh.cmd('''
             ps aux --sort -pmem | head -6 | 
             awk '{$1=$3=$5=$6=$7=$8=$9=$10=""; print $0}'
-        ''').table2dict()
+        ''').output_else_raise()
+        return self.output2dict_for_utilization_top5(top5_processes)
 
     @property
     def utilization_swap(self) -> Union[float, int]:
@@ -898,7 +915,8 @@ class MetricsHandler:
                 device_id  =node.device_id,
                 device_name=node.device_name,
                 pid        =top['PID'],
-                command    =top['COMMAND']
+                command    =top['COMMAND'],
+                args       =top['ARGS']
             ).set(top['%CPU'])
 
     @staticmethod
@@ -985,7 +1003,8 @@ class MetricsHandler:
                 device_id  =node.device_id,
                 device_name=node.device_name,
                 pid        =top['PID'],
-                command    =top['COMMAND']
+                command    =top['COMMAND'],
+                args       =top['ARGS']
             ).set(top['%MEM'])
 
     @staticmethod
