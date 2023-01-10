@@ -4,7 +4,7 @@ nodes:
     username: isddc
     password: Pass@w0rd
     device_id: 1
-    device_name: a
+    device_name: 服务器A
   - ip: 10.121.12.150
     port: 22
     username: lenovo

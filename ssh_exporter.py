@@ -225,7 +225,7 @@ def init_socket(config: gdict) -> socket.socket:
 
     skt = socket.socket(family=AF_INET, type=SOCK_STREAM)
     skt.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-    skt.setblocking(0)
+    skt.setblocking(False)
 
     skt.bind((host, port))
     skt.listen()
@@ -562,7 +562,6 @@ config_struct = DataStruct({
 
 def output_config():
     config: gdict = copy.deepcopy(cnf)
-
     config.server = str(config.server)
 
     for i, wrapper in enumerate(config.metrics):
@@ -574,7 +573,8 @@ def output_config():
         if 'metrics' in node:
             node.metrics = [wrapper._name for wrapper in node.metrics]
 
-    glog.info(f'config \n{yaml.dump(config, sort_keys=False)}')
+    config: str = yaml.dump(config, allow_unicode=True, sort_keys=False)
+    glog.info(f'config \n{config}')
 
 
 class Collector(metaclass=gqylpy_cache):
@@ -1197,7 +1197,7 @@ if __name__ == '__main__':
         open(os.path.join(basedir, 'config.yml'), encoding='utf8')
     )
 
-    cnf = gdict(user_config)
+    cnf = gdict(user_config, basedir=basedir)
     config_struct.verify(cnf)
     output_config()
 
