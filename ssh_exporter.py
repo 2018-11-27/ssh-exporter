@@ -323,7 +323,7 @@ def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
     ).start()
 
 
-def init_ignore_fstype(ignore_fstype: Union[list, str]) -> str:
+def init_collector_ignore_fstype(ignore_fstype: Union[list, str]) -> str:
     if ignore_fstype.__class__ is list:
         x: str = ' -x '.join(ignore_fstype)
     else:
@@ -518,7 +518,7 @@ config_struct = DataStruct({
                 env     : 'COLLECTOR_IGNORE_FSTYPE',
                 option  : '--collector-ignore-fstype',
                 params  : [delete_empty],
-                callback: init_ignore_fstype
+                callback: init_collector_ignore_fstype
             }
         },
         default: {
@@ -574,7 +574,7 @@ def output_config():
             node.metrics = [wrapper._name for wrapper in node.metrics]
 
     config: str = yaml.dump(config, allow_unicode=True, sort_keys=False)
-    glog.info(f'config \n{config}')
+    glog.info(f'configuration as follows: \n{config}')
 
 
 class Collector(metaclass=gqylpy_cache):
