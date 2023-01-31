@@ -31,7 +31,6 @@ import gqylpy_log   as glog
 from gqylpy_datastruct import DataStruct
 from gqylpy_dict       import gdict
 from gqylpy_ssh        import GqylpySSH
-from gqylpy_ssh        import Command
 from gqylpy_ssh        import SSHException
 from gqylpy_ssh        import NoValidConnectionsError
 
@@ -40,14 +39,6 @@ from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.metrics import Gauge
 
 from typing import Union, Generator
-
-
-def output_else_raise(self) -> str:
-    self.raise_if_error()
-    return self.stdout[:-9].decode()
-
-
-Command.output_else_raise = output_else_raise
 
 
 metrics = gdict(
