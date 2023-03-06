@@ -449,7 +449,6 @@ config_struct = DataStruct({
                 },
                 'timeout': {
                     type    : (int, str),
-                    coerce  : int,
                     default : 30,
                     env     : 'SSH_CONNECT_TIMEOUT',
                     option  : '--ssh-connect-timeout',
@@ -458,7 +457,6 @@ config_struct = DataStruct({
                 },
                 'command_timeout': {
                     type    : (int, str),
-                    coerce  : int,
                     default : 10,
                     env     : 'SSH_COMMAND_TIMEOUT',
                     option  : '--ssh-command-timeout',
