@@ -811,7 +811,7 @@ class MetricsHandler:
 
             for wrapper in node.get('metrics', cnf.metrics):
                 pool.submit(
-                    cls.get_metric, node, wrapper,
+                    cls.get_metric, wrapper, node,
                     cpu=cpu, memory=memory, disk=disk, network=network
                 )
 
@@ -828,7 +828,7 @@ class MetricsHandler:
             w.clear()
 
     @classmethod
-    def get_metric(cls, node: gdict, wrapper: Gauge, **collectors):
+    def get_metric(cls, wrapper: Gauge, node: gdict, **collectors):
         try:
             getattr(cls, f'get_{wrapper._name}')(wrapper, node, **collectors)
         except (SSHException, TimeoutError, OSError):
