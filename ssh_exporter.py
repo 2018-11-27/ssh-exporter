@@ -22,6 +22,8 @@ from socket import SOCK_STREAM
 from socket import SOL_SOCKET
 from socket import SO_REUSEADDR
 
+from concurrent.futures import ThreadPoolExecutor
+
 import yaml
 import prometheus_client
 
@@ -259,9 +261,7 @@ def init_ssh_connection(node: gdict) -> gdict:
         ).output_else_raise()
     except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
         node.ip = ip
-
-        for param, value in not_ssh_params.items():
-            node[param] = value
+        node.update(not_ssh_params)
 
         if asynchronous:
             raise e
@@ -276,9 +276,7 @@ def init_ssh_connection(node: gdict) -> gdict:
 
     node.ssh = ssh
     node.ip  = ip
-
-    for param, value in not_ssh_params.items():
-        node[param] = value
+    node.update(not_ssh_params)
 
     if not asynchronous:
         glog.info(f'SSH connection to "{ip}" has been established.')
@@ -567,6 +565,7 @@ def output_config():
         config.metrics[i] = wrapper._name
 
     for node in config.nodes:
+        node.password = None
         if 'ssh' in node:
             node.ssh = str(node.ssh)
         if 'metrics' in node:
@@ -798,44 +797,25 @@ class MetricsHandler:
 
     @classmethod
     def get(cls) -> Generator:
-        for node in cnf.nodes:
-            try:
-                ssh: GqylpySSH = node.ssh
-            except KeyError:
-                continue
+        nodes = [node for node in cnf.nodes if 'ssh' in node]
 
+        pool = ThreadPoolExecutor(len(nodes) * len(metrics), 'Collector')
+
+        for node in nodes:
             collector_config: gdict = node.get('collector', cnf.collector)
 
-            cpu     = CPUCollector    (ssh, config=collector_config)
-            memory  = MemoryCollector (ssh, config=collector_config)
-            disk    = DiskCollector   (ssh, config=collector_config)
-            network = NetworkCollector(ssh, config=collector_config)
+            cpu     = CPUCollector    (node.ssh, config=collector_config)
+            memory  = MemoryCollector (node.ssh, config=collector_config)
+            disk    = DiskCollector   (node.ssh, config=collector_config)
+            network = NetworkCollector(node.ssh, config=collector_config)
 
             for wrapper in node.get('metrics', cnf.metrics):
-                try:
-                    getattr(cls, f'get_{wrapper._name}')(
-                        wrapper, node,
-                        cpu    =cpu,
-                        memory =memory,
-                        disk   =disk,
-                        network=network
-                    )
-                except (SSHException, TimeoutError, OSError):
-                    glog.warning(
-                        f'SSH connection to "{node.ip}" is break, will try '
-                        f're-establish until succeed, always skip this node '
-                        f'during this period.'
-                    )
-                    del node.ssh, node.hostname, node.hostuuid
-                    async_init_ssh_connection(node)
-                    break
-                except Exception as e:
-                    glog.error({
-                        'msg'   : 'get metric error.',
-                        'metric': wrapper._name,
-                        'node'  : node.ip,
-                        'e'     : e
-                    })
+                pool.submit(
+                    cls.get_metric, node, wrapper,
+                    cpu=cpu, memory=memory, disk=disk, network=network
+                )
+
+        pool.shutdown(wait=True)
 
         for w in metrics.values():
             try:
@@ -846,6 +826,27 @@ class MetricsHandler:
                     ww.clear()
                 raise e
             w.clear()
+
+    @classmethod
+    def get_metric(cls, node: gdict, wrapper: Gauge, **collectors):
+        try:
+            getattr(cls, f'get_{wrapper._name}')(wrapper, node, **collectors)
+        except (SSHException, TimeoutError, OSError):
+            glog.warning(
+                f'SSH connection to "{node.ip}" is break, will try '
+                're-establish until succeed, always skip this node '
+                'during this period.'
+            )  # TODO multiple threads repeat warning.
+            del node.ssh, node.hostname, node.hostuuid
+            async_init_ssh_connection(node)
+            return
+        except Exception as e:
+            glog.error({
+                'msg': 'get metric error.',
+                'metric': wrapper._name,
+                'node': node.ip,
+                'e': e
+            })
 
     @staticmethod
     def get_ssh_cpu_utilization(
