@@ -27,7 +27,7 @@ from concurrent.futures import ThreadPoolExecutor
 import yaml
 import prometheus_client
 
-import gqylpy_cache
+import funccache
 import gqylpy_log   as glog
 
 from gqylpy_datastruct import DataStruct
@@ -575,7 +575,7 @@ def output_config():
     glog.info(f'configuration as follows: \n{config}')
 
 
-class Collector(metaclass=gqylpy_cache):
+class Collector(metaclass=funccache):
     __shared_instance_cache__ = False
 
     def __init__(self, ssh: GqylpySSH, /, *, config: gdict):
