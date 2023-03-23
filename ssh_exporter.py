@@ -28,7 +28,7 @@ import yaml
 import prometheus_client
 
 import funccache
-import gqylpy_log   as glog
+import gqylpy_log as glog
 
 from gqylpy_datastruct import DataStruct
 from gqylpy_dict       import gdict
@@ -40,7 +40,7 @@ from prometheus_client         import generate_latest
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.metrics import Gauge
 
-from typing import Union, Generator
+from typing import Union, Literal, Generator
 
 
 metrics = gdict(
@@ -259,6 +259,7 @@ def init_ssh_connection(node: gdict) -> gdict:
         node.hostuuid = ssh.cmd(
             "dmidecode -t 1 | grep 'UUID: ' | awk '{print $NF}'"
         ).output_else_raise()
+        node.system_lang = 0 if ssh.cmd('echo $LANG').contain('Zn_CN') else 1
     except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
         node.ip = ip
         node.update(not_ssh_params)
@@ -404,13 +405,7 @@ config_struct = DataStruct({
                 params : [delete_empty]
             }
         },
-        default: {
-            'level'  : 'INFO',
-            'output' : 'stream',
-            'datefmt': '%F %T',
-            'logfmt' : '[%(asctime)s] [%(funcName)s.line%(lineno)d] '
-                       '[%(levelname)s] %(message)s'
-        },
+        default: {},
         params  : [delete_empty],
         callback: lambda x: glog.__init__(__name__, **x, gname=__name__) and x
     },
@@ -550,7 +545,7 @@ config_struct = DataStruct({
                 params: [delete_empty]
             }
         },
-        default: {'host': '0.0.0.0', 'port': 80},
+        default: {},
         params: [delete_empty],
         callback: init_socket
     }
@@ -578,8 +573,10 @@ def output_config():
 class Collector(metaclass=funccache):
     __shared_instance_cache__ = False
 
-    def __init__(self, ssh: GqylpySSH, /, *, config: gdict):
-        self.ssh    = ssh
+    def __init__(self, node: gdict, /, *, config: gdict):
+        self.ssh        : GqylpySSH     = node.ssh
+        self.system_lang: Literal[0, 1] = node.system_lang
+
         self.config = config
 
     @staticmethod
@@ -717,17 +714,34 @@ class MemoryCollector(Collector):
 
 class DiskCollector(Collector):
 
+    system_lang_mapping = {
+        'utilization_of_mountpoint':     ('已用%', 'Use%'),
+        'used_bytes_of_mountpoint':      ('已用', 'Used'),
+        'available_bytes_of_mountpoint': ('可用', 'Available'),
+        'filesystems':                   ('文件系统', 'Filesystem'),
+        'filesystem_types':              ('类型', 'Type'),
+        'mountpoints':                   ('挂载点', 'Mounted')
+    }
+
+    @property
+    def title(self) -> str:
+        return self.system_lang_mapping[
+            sys._getframe(3).f_code.co_qualname.split('.')[1]
+        ][self.system_lang]
+
+    __not_cache__ = [title]
+
     @property
     def utilization_of_mountpoint(self) -> Generator:
-        return (info['Use%'][:-1] for info in self.info_of_mountpoint)
+        return (info[self.title][:-1] for info in self.info_of_mountpoint)
 
     @property
     def used_bytes_of_mountpoint(self) -> Generator:
-        return (info['Used'] for info in self.info_of_mountpoint)
+        return (info[self.title] for info in self.info_of_mountpoint)
 
     @property
     def available_bytes_of_mountpoint(self) -> Generator:
-        return (info['Available'] for info in self.info_of_mountpoint)
+        return (info[self.title] for info in self.info_of_mountpoint)
 
     @property
     def read_bytes_total(self) -> Generator:
@@ -739,15 +753,15 @@ class DiskCollector(Collector):
 
     @property
     def filesystems(self) -> list:
-        return [info['Filesystem'] for info in self.info_of_mountpoint]
+        return [info[self.title] for info in self.info_of_mountpoint]
 
     @property
     def filesystem_types(self) -> list:
-        return [info['Type'] for info in self.info_of_mountpoint]
+        return [info[self.title] for info in self.info_of_mountpoint]
 
     @property
     def mountpoints(self) -> list:
-        return [info['Mounted'] for info in self.info_of_mountpoint]
+        return [info[self.title] for info in self.info_of_mountpoint]
 
     @property
     def disks(self) -> list:
@@ -804,10 +818,10 @@ class MetricsHandler:
         for node in nodes:
             collector_config: gdict = node.get('collector', cnf.collector)
 
-            cpu     = CPUCollector    (node.ssh, config=collector_config)
-            memory  = MemoryCollector (node.ssh, config=collector_config)
-            disk    = DiskCollector   (node.ssh, config=collector_config)
-            network = NetworkCollector(node.ssh, config=collector_config)
+            cpu     = CPUCollector    (node, config=collector_config)
+            memory  = MemoryCollector (node, config=collector_config)
+            disk    = DiskCollector   (node, config=collector_config)
+            network = NetworkCollector(node, config=collector_config)
 
             for wrapper in node.get('metrics', cnf.metrics):
                 pool.submit(
