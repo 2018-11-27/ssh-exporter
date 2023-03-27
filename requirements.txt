@@ -1,6 +1,6 @@
 prometheus_client>=0.16.0,<1.0
 gqylpy           >=1.0
-gqylpy_ssh       >=1.2.3, <2.0
+gqylpy_ssh       >=1.2.4, <2.0
 gqylpy_datastruct>=2.2.2, <3.0
 gqylpy_dict      >=1.1.4, <2.0
 gqylpy_log       >=1.0.3, <2.0

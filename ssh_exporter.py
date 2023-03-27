@@ -259,7 +259,9 @@ def init_ssh_connection(node: gdict) -> gdict:
         node.hostuuid = ssh.cmd(
             "dmidecode -t 1 | grep 'UUID: ' | awk '{print $NF}'"
         ).output_else_raise()
-        node.system_lang = 0 if ssh.cmd('echo $LANG').contain('Zn_CN') else 1
+
+        node.system_lang = \
+            0 if ssh.cmd('echo $LANG').contain('Zn_CN', ignore_case=True) else 1
     except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
         node.ip = ip
         node.update(not_ssh_params)
