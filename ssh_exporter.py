@@ -7,7 +7,6 @@ Confidential and Proprietary
 """
 import gqylpy as __
 
-import os
 import re
 import sys
 import time
@@ -35,12 +34,14 @@ from gqylpy_dict       import gdict
 from gqylpy_ssh        import GqylpySSH
 from gqylpy_ssh        import SSHException
 from gqylpy_ssh        import NoValidConnectionsError
+from systempath        import SystemPath
+from systempath        import Directory
 
 from prometheus_client         import generate_latest
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.metrics import Gauge
 
-from typing import Union, Literal, Generator, Callable, Any
+from typing import Union, Generator, Callable, Any
 
 
 metrics = gdict(
@@ -346,7 +347,7 @@ def init_metrics_wrapper(metric_list: list) -> list:
     return metric_list
 
 
-def delete_unused_metrics(metric_list: list):
+def delete_unused_metrics(metric_list: list) -> list:
     for metric, wrapper in metrics.copy().items():
         if wrapper.__class__ is gdict:
             del metrics[metric]
@@ -552,9 +553,11 @@ config_struct = DataStruct({
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
 
 
-def output_config():
+def output_config() -> None:
     config: gdict = copy.deepcopy(cnf)
-    config.server = str(config.server)
+
+    config.basedir = config.basedir.name
+    config.server  = str(config.server)
 
     for i, wrapper in enumerate(config.metrics):
         config.metrics[i] = wrapper._name
@@ -1219,12 +1222,9 @@ class MetricsHandler:
 
 
 if __name__ == '__main__':
-    basedir: str = os.path.dirname(os.path.abspath(__file__))
-    user_config: dict = yaml.safe_load(
-        open(os.path.join(basedir, 'config.yml'), encoding='utf8')
-    )
+    root: Directory = SystemPath(__file__).dirname
 
-    cnf = gdict(user_config, basedir=basedir)
+    cnf = gdict(yaml.safe_load(root['config.yml'].open.rb()), basedir=root)
     config_struct.verify(cnf)
     output_config()
 
@@ -1249,20 +1249,20 @@ if __name__ == '__main__':
         for read_event in select.select(rlist, [], [])[0]:
             if read_event is server:
                 rlist.append(server.accept()[0])
-            else:
-                try:
-                    body: bytes = read_event.recv(8192)
-                    if body[:21] == b'GET /metrics HTTP/1.1':
-                        start = time.time()
-                        response: bytes = b''.join(MetricsHandler.get())
-                        runtime = round(time.time() - start, 2)
-                        glog.info(f'GET /metrics 200 (runtime:{runtime}s)')
-                    else:
-                        response: bytes = index
-                        glog.info('GET /<any> 200')
-                    read_event.sendall(b'HTTP/1.1 200 OK\r\n\r\n' + response)
-                except Exception as ee:
-                    glog.error(f'server error, {ee}')
-                finally:
-                    rlist.remove(read_event)
-                    read_event.close()
+                continue
+            try:
+                body: bytes = read_event.recv(8192)
+                if body[:21] == b'GET /metrics HTTP/1.1':
+                    start = time.time()
+                    response: bytes = b''.join(MetricsHandler.get())
+                    runtime = round(time.time() - start, 2)
+                    glog.info(f'GET /metrics 200 (runtime:{runtime}s)')
+                else:
+                    response: bytes = index
+                    glog.info('GET /<any> 200')
+                read_event.sendall(b'HTTP/1.1 200 OK\r\n\r\n' + response)
+            except Exception as ee:
+                glog.error(f'server error, {ee}')
+            finally:
+                rlist.remove(read_event)
+                read_event.close()
