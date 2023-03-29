@@ -715,12 +715,12 @@ class MemoryCollector(Collector):
 
 class DiskCollector(Collector):
     system_lang_mapping = {
-        'utilization_of_mountpoint': {'zn_cn': '已用%', 'en_us': 'Use%'},
-        'used_bytes_of_mountpoint': {'zn_cn': '已用', 'en_us': 'Used'},
+        'utilization_of_mountpoint':     {'zn_cn': '已用%', 'en_us': 'Use%'},
+        'used_bytes_of_mountpoint':      {'zn_cn': '已用', 'en_us': 'Used'},
         'available_bytes_of_mountpoint': {'zn_cn': '可用', 'en_us': 'Available'},
-        'filesystems': {'zn_cn': '文件系统', 'en_us': 'Filesystem'},
-        'filesystem_types': {'zn_cn': '类型', 'en_us': 'Type'},
-        'mountpoints': {'zn_cn': '挂载点', 'en_us': 'Mounted'}
+        'filesystems':               {'zn_cn': '文件系统', 'en_us': 'Filesystem'},
+        'filesystem_types':              {'zn_cn': '类型', 'en_us': 'Type'},
+        'mountpoints':                   {'zn_cn': '挂载点', 'en_us': 'Mounted'}
     }
 
     def system_lang_selector(func) -> Callable[['DiskCollector'], Callable]:
@@ -731,7 +731,8 @@ class DiskCollector(Collector):
             except KeyError:
                 glog.warning(
                     f'system language "{self.system_lang}" mapping undefined, '
-                    f'will try to use the default language "en_us".'
+                    f'will try to use the default language "en_us", '
+                    f'node is "{self.ssh.hostname}".'
                 )
                 title: str = system_lang_mapping['en_us']
             return func(self, title=title)
