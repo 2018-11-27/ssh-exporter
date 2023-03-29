@@ -575,8 +575,8 @@ class Collector(metaclass=funccache):
     __shared_instance_cache__ = False
 
     def __init__(self, node: gdict, /, *, config: gdict):
-        self.ssh        : GqylpySSH     = node.ssh
-        self.system_lang: Literal[0, 1] = node.system_lang
+        self.ssh        : GqylpySSH = node.ssh
+        self.system_lang: str       = node.system_lang
 
         self.config = config
 
@@ -731,7 +731,7 @@ class DiskCollector(Collector):
             except KeyError:
                 glog.warning(
                     f'system language "{self.system_lang}" mapping undefined, '
-                    f'will try to use the default language "en_us", '
+                    'will try to use the default language "en_us", '
                     f'node is "{self.ssh.hostname}".'
                 )
                 title: str = system_lang_mapping['en_us']
