@@ -249,7 +249,7 @@ def init_ssh_connection(node: gdict) -> gdict:
         not_ssh_params[param] = node.pop(param)
 
     asynchronous: bool = \
-        sys._getframe().f_back.f_code.co_name == 'init_ssh_connection_async'
+        sys._getframe(1).f_code.co_name == 'init_ssh_connection_async'
 
     try:
         ssh = GqylpySSH(ip, **node)
@@ -288,9 +288,8 @@ def init_ssh_connection(node: gdict) -> gdict:
 
 def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
     __nodes__.append(node)
-    if 'InitSSHConnectionAsync' in (
-            child_thread.name for child_thread in threading.enumerate()
-    ):
+
+    if 'InitSSHConnectionAsync' in (x.name for x in threading.enumerate()):
         return
 
     def init_ssh_connection_async():
