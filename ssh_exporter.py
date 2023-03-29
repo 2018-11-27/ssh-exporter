@@ -40,7 +40,7 @@ from prometheus_client         import generate_latest
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.metrics import Gauge
 
-from typing import Union, Literal, Generator
+from typing import Union, Literal, Generator, Callable, Any
 
 
 metrics = gdict(
@@ -260,8 +260,7 @@ def init_ssh_connection(node: gdict) -> gdict:
             "dmidecode -t 1 | grep 'UUID: ' | awk '{print $NF}'"
         ).output_else_raise()
 
-        node.system_lang = \
-            0 if ssh.cmd('echo $LANG').contain('Zn_CN', ignore_case=True) else 1
+        node.system_lang = ssh.cmd('echo $LANG').output_else_raise()[:5].lower()
     except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
         node.ip = ip
         node.update(not_ssh_params)
@@ -715,35 +714,43 @@ class MemoryCollector(Collector):
 
 
 class DiskCollector(Collector):
-
     system_lang_mapping = {
-        'utilization_of_mountpoint':     ('已用%', 'Use%'),
-        'used_bytes_of_mountpoint':      ('已用', 'Used'),
-        'available_bytes_of_mountpoint': ('可用', 'Available'),
-        'filesystems':                   ('文件系统', 'Filesystem'),
-        'filesystem_types':              ('类型', 'Type'),
-        'mountpoints':                   ('挂载点', 'Mounted')
+        'utilization_of_mountpoint': {'zn_cn': '已用%', 'en_us': 'Use%'},
+        'used_bytes_of_mountpoint': {'zn_cn': '已用', 'en_us': 'Used'},
+        'available_bytes_of_mountpoint': {'zn_cn': '可用', 'en_us': 'Available'},
+        'filesystems': {'zn_cn': '文件系统', 'en_us': 'Filesystem'},
+        'filesystem_types': {'zn_cn': '类型', 'en_us': 'Type'},
+        'mountpoints': {'zn_cn': '挂载点', 'en_us': 'Mounted'}
     }
 
-    @property
-    def title(self) -> str:
-        return self.system_lang_mapping[
-            sys._getframe(3).f_code.co_qualname.split('.')[1]
-        ][self.system_lang]
-
-    __not_cache__ = [title]
-
-    @property
-    def utilization_of_mountpoint(self) -> Generator:
-        return (info[self.title][:-1] for info in self.info_of_mountpoint)
-
-    @property
-    def used_bytes_of_mountpoint(self) -> Generator:
-        return (info[self.title] for info in self.info_of_mountpoint)
+    def system_lang_selector(func) -> Callable[['DiskCollector'], Callable]:
+        def inner(self: 'DiskCollector') -> Any:
+            system_lang_mapping: dict = self.system_lang_mapping[func.__name__]
+            try:
+                title: str = system_lang_mapping[self.system_lang]
+            except KeyError:
+                glog.warning(
+                    f'system language "{self.system_lang}" mapping undefined, '
+                    f'will try to use the default language "en_us".'
+                )
+                title: str = system_lang_mapping['en_us']
+            return func(self, title=title)
+        return inner
 
     @property
-    def available_bytes_of_mountpoint(self) -> Generator:
-        return (info[self.title] for info in self.info_of_mountpoint)
+    @system_lang_selector
+    def utilization_of_mountpoint(self, *, title) -> Generator:
+        return (info[title][:-1] for info in self.info_of_mountpoint)
+
+    @property
+    @system_lang_selector
+    def used_bytes_of_mountpoint(self, *, title) -> Generator:
+        return (info[title] for info in self.info_of_mountpoint)
+
+    @property
+    @system_lang_selector
+    def available_bytes_of_mountpoint(self, *, title) -> Generator:
+        return (info[title] for info in self.info_of_mountpoint)
 
     @property
     def read_bytes_total(self) -> Generator:
@@ -754,16 +761,19 @@ class DiskCollector(Collector):
         return (int(info[2]) / 2 * 1024 for info in self.info_of_disk)
 
     @property
-    def filesystems(self) -> list:
-        return [info[self.title] for info in self.info_of_mountpoint]
+    @system_lang_selector
+    def filesystems(self, *, title) -> list:
+        return [info[title] for info in self.info_of_mountpoint]
 
     @property
-    def filesystem_types(self) -> list:
-        return [info[self.title] for info in self.info_of_mountpoint]
+    @system_lang_selector
+    def filesystem_types(self, *, title) -> list:
+        return [info[title] for info in self.info_of_mountpoint]
 
     @property
-    def mountpoints(self) -> list:
-        return [info[self.title] for info in self.info_of_mountpoint]
+    @system_lang_selector
+    def mountpoints(self, *, title) -> list:
+        return [info[title] for info in self.info_of_mountpoint]
 
     @property
     def disks(self) -> list:
@@ -846,7 +856,9 @@ class MetricsHandler:
     @classmethod
     def get_metric(cls, wrapper: Gauge, node: gdict, **collectors):
         try:
-            getattr(cls, f'get_{wrapper._name}')(wrapper, node, **collectors)
+            getattr(cls, f'get_metric__{wrapper._name}')(
+                wrapper, node, **collectors
+            )
         except (SSHException, TimeoutError, OSError):
             glog.warning(
                 f'SSH connection to "{node.ip}" is break, will try '
@@ -855,7 +867,6 @@ class MetricsHandler:
             )  # TODO multiple threads repeat warning.
             del node.ssh, node.hostname, node.hostuuid
             async_init_ssh_connection(node)
-            return
         except Exception as e:
             glog.error({
                 'msg': 'get metric error.',
@@ -865,7 +876,7 @@ class MetricsHandler:
             })
 
     @staticmethod
-    def get_ssh_cpu_utilization(
+    def get_metric__ssh_cpu_utilization(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -882,7 +893,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_cpu_utilization_user(
+    def get_metric__ssh_cpu_utilization_user(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -899,7 +910,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_cpu_utilization_system(
+    def get_metric__ssh_cpu_utilization_system(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -916,7 +927,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_cpu_utilization_top5(
+    def get_metric__ssh_cpu_utilization_top5(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -936,7 +947,7 @@ class MetricsHandler:
             ).set(top['%CPU'])
 
     @staticmethod
-    def get_ssh_cpu_percentage_idle(
+    def get_metric__ssh_cpu_percentage_idle(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -953,7 +964,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_cpu_percentage_wait(
+    def get_metric__ssh_cpu_percentage_wait(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -970,7 +981,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_cpu_count(
+    def get_metric__ssh_cpu_count(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -987,7 +998,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_memory_utilization(
+    def get_metric__ssh_memory_utilization(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1004,7 +1015,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_memory_utilization_top5(
+    def get_metric__ssh_memory_utilization_top5(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1024,7 +1035,7 @@ class MetricsHandler:
             ).set(top['%MEM'])
 
     @staticmethod
-    def get_ssh_memory_utilization_swap(
+    def get_metric__ssh_memory_utilization_swap(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1041,7 +1052,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_memory_available_bytes(
+    def get_metric__ssh_memory_available_bytes(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1058,7 +1069,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_memory_available_swap_bytes(
+    def get_metric__ssh_memory_available_swap_bytes(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1075,7 +1086,7 @@ class MetricsHandler:
         ).set(v)
 
     @staticmethod
-    def get_ssh_disk_utilization(
+    def get_metric__ssh_disk_utilization(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1095,7 +1106,7 @@ class MetricsHandler:
             ).set(v)
 
     @staticmethod
-    def get_ssh_disk_used_bytes(
+    def get_metric__ssh_disk_used_bytes(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1115,7 +1126,7 @@ class MetricsHandler:
             ).set(v)
 
     @staticmethod
-    def get_ssh_disk_available_bytes(
+    def get_metric__ssh_disk_available_bytes(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1135,7 +1146,7 @@ class MetricsHandler:
             ).set(v)
 
     @staticmethod
-    def get_ssh_disk_read_bytes_total(
+    def get_metric__ssh_disk_read_bytes_total(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1153,7 +1164,7 @@ class MetricsHandler:
             ).set(v)
 
     @staticmethod
-    def get_ssh_disk_write_bytes_total(
+    def get_metric__ssh_disk_write_bytes_total(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1171,7 +1182,7 @@ class MetricsHandler:
             ).set(v)
 
     @staticmethod
-    def get_ssh_network_receive_bytes_total(
+    def get_metric__ssh_network_receive_bytes_total(
             wrapper: Gauge,
             node:    gdict,
             *,
@@ -1189,7 +1200,7 @@ class MetricsHandler:
             ).set(v)
 
     @staticmethod
-    def get_ssh_network_transmit_bytes_total(
+    def get_metric__ssh_network_transmit_bytes_total(
             wrapper: Gauge,
             node:    gdict,
             *,

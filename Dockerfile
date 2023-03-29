@@ -1,6 +1,6 @@
 # Copyright (c) 2022 Lenovo. All right reserved.
 # Confidential and Proprietary
-FROM harbor.lenovo.com/base/python:3.11-rc-slim
+FROM harbor.lenovo.com/base/python:3.9.9-alpine3.14
 
 ARG BASEDIR=/usr/src/
 
