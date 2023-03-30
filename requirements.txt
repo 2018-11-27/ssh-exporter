@@ -5,5 +5,5 @@ gqylpy_datastruct>=2.2.2, <3.0
 gqylpy_dict      >=1.1.4, <2.0
 gqylpy_log       >=1.0.3, <2.0
 systempath       >=1.0.3, <2.0
-PyYAML           >=6.0,   <7.0
 funccache        >=1.4.0, <2.0
+PyYAML           >=6.0,   <7.0

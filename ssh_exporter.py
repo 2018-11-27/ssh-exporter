@@ -828,7 +828,7 @@ class MetricsHandler:
     def get(cls) -> Generator:
         nodes = [node for node in cnf.nodes if 'ssh' in node]
 
-        pool = ThreadPoolExecutor(len(nodes) * len(metrics), 'Collector')
+        pool = ThreadPoolExecutor((len(nodes) * len(metrics)) or 1, 'Collector')
 
         for node in nodes:
             collector_config: gdict = node.get('collector', cnf.collector)
@@ -863,12 +863,12 @@ class MetricsHandler:
                 wrapper, node, **collectors
             )
         except (SSHException, TimeoutError, OSError):
+            del node.ssh, node.hostname, node.hostuuid
             glog.warning(
                 f'SSH connection to "{node.ip}" is break, will try '
                 're-establish until succeed, always skip this node '
                 'during this period.'
-            )  # TODO multiple threads repeat warning.
-            del node.ssh, node.hostname, node.hostuuid
+            )
             async_init_ssh_connection(node)
         except Exception as e:
             glog.error({
@@ -1262,7 +1262,7 @@ if __name__ == '__main__':
                     glog.info('GET /<any> 200')
                 read_event.sendall(b'HTTP/1.1 200 OK\r\n\r\n' + response)
             except Exception as ee:
-                glog.error(f'server error, {ee}')
+                glog.error(f'server error, {ee.__class__}: {ee}')
             finally:
                 rlist.remove(read_event)
                 read_event.close()
