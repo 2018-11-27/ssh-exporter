@@ -239,18 +239,28 @@ def init_socket(config: gdict) -> socket.socket:
     return skt
 
 
-def init_ssh_connection(node: gdict) -> gdict:
-    ip: str = node.pop('ip')
-    not_ssh_params = {}
+def init_ssh_connection(nodes: list) -> list:
+    node_number: int = len(nodes)
 
-    for param in set(node) - {
+    if node_number < 10:
+        for node in nodes:
+            init_ssh_connection_each(node)
+    else:
+        with ThreadPoolExecutor(node_number, 'InitSSHConnection') as pool:
+            pool.map(init_ssh_connection_each, nodes)
+
+    return nodes
+
+
+def init_ssh_connection_each(node: gdict) -> gdict:
+    ip: str = node.pop('ip')
+
+    not_ssh_params = dict((param, node.pop(param)) for param in set(node) - {
         *inspect.signature(GqylpySSH.connect).parameters,
         'command_timeout', 'auto_sudo', 'reconnect'
-    }:
-        not_ssh_params[param] = node.pop(param)
+    })
 
-    asynchronous: bool = \
-        sys._getframe(1).f_code.co_name == 'init_ssh_connection_async'
+    retry: bool = sys._getframe(1).f_code.co_name == 'init_ssh_connection_retry'
 
     try:
         ssh = GqylpySSH(ip, **node)
@@ -266,7 +276,7 @@ def init_ssh_connection(node: gdict) -> gdict:
         node.ip = ip
         node.update(not_ssh_params)
 
-        if asynchronous:
+        if retry:
             raise e
 
         glog.warning(
@@ -274,26 +284,26 @@ def init_ssh_connection(node: gdict) -> gdict:
             'will switch to asynchronous try until succeed.'
         )
 
-        async_init_ssh_connection(node)
+        init_ssh_connection_again(node)
         return node
 
     node.ssh = ssh
     node.ip  = ip
     node.update(not_ssh_params)
 
-    if not asynchronous:
+    if not retry:
         glog.info(f'SSH connection to "{ip}" has been established.')
 
     return node
 
 
-def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
+def init_ssh_connection_again(node: gdict, *, __nodes__=[]) -> None:
     __nodes__.append(node)
 
-    if 'InitSSHConnectionAsync' in (x.name for x in threading.enumerate()):
+    if 'InitSSHConnectionAgain' in (x.name for x in threading.enumerate()):
         return
 
-    def init_ssh_connection_async():
+    def init_ssh_connection_retry():
         time.sleep(10)
         i = -1
         while __nodes__:
@@ -304,7 +314,7 @@ def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
                 i = -1
                 n: gdict = __nodes__[i]
             try:
-                init_ssh_connection(n)
+                init_ssh_connection_each(n)
             except (
                     SSHException, NoValidConnectionsError,
                     TimeoutError, OSError
@@ -318,8 +328,8 @@ def async_init_ssh_connection(node: gdict, /, *, __nodes__=[]) -> None:
                 __nodes__.remove(n)
 
     threading.Thread(
-        target=init_ssh_connection_async,
-        name  ='InitSSHConnectionAsync',
+        target=init_ssh_connection_retry,
+        name  ='InitSSHConnectionAgain',
         daemon=True
     ).start()
 
@@ -498,9 +508,9 @@ config_struct = DataStruct({
                     },
                     params: [optional, delete_empty]
                 }
-            },
-            callback: init_ssh_connection
+            }
         },
+        callback: init_ssh_connection,
         ignore_if_in: [[]]
     },
     'collector': {
@@ -720,7 +730,7 @@ class DiskCollector(Collector):
         'utilization_of_mountpoint':     {'zn_cn': '已用%', 'en_us': 'Use%'},
         'used_bytes_of_mountpoint':      {'zn_cn': '已用', 'en_us': 'Used'},
         'available_bytes_of_mountpoint': {'zn_cn': '可用', 'en_us': 'Available'},
-        'filesystems':               {'zn_cn': '文件系统', 'en_us': 'Filesystem'},
+        'filesystems':              {'zn_cn': '文件系统', 'en_us': 'Filesystem'},
         'filesystem_types':              {'zn_cn': '类型', 'en_us': 'Type'},
         'mountpoints':                   {'zn_cn': '挂载点', 'en_us': 'Mounted'}
     }
@@ -857,7 +867,7 @@ class MetricsHandler:
             w.clear()
 
     @classmethod
-    def get_metric(cls, wrapper: Gauge, node: gdict, **collectors):
+    def get_metric(cls, wrapper: Gauge, node: gdict, **collectors) -> None:
         try:
             getattr(cls, f'get_metric__{wrapper._name}')(
                 wrapper, node, **collectors
@@ -869,7 +879,7 @@ class MetricsHandler:
                 're-establish until succeed, always skip this node '
                 'during this period.'
             )
-            async_init_ssh_connection(node)
+            init_ssh_connection_again(node)
         except Exception as e:
             glog.error({
                 'msg': 'get metric error.',
