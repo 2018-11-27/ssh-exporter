@@ -252,7 +252,7 @@ def init_ssh_connection(nodes: list) -> list:
     return nodes
 
 
-def init_ssh_connection_each(node: gdict) -> gdict:
+def init_ssh_connection_each(node: gdict):
     ip: str = node.pop('ip')
 
     not_ssh_params = dict((param, node.pop(param)) for param in set(node) - {
@@ -285,16 +285,13 @@ def init_ssh_connection_each(node: gdict) -> gdict:
         )
 
         init_ssh_connection_again(node)
-        return node
+    else:
+        node.ssh = ssh
+        node.ip  = ip
+        node.update(not_ssh_params)
 
-    node.ssh = ssh
-    node.ip  = ip
-    node.update(not_ssh_params)
-
-    if not retry:
-        glog.info(f'SSH connection to "{ip}" has been established.')
-
-    return node
+        if not retry:
+            glog.info(f'SSH connection to "{ip}" has been established.')
 
 
 def init_ssh_connection_again(node: gdict, *, __nodes__=[]) -> None:
@@ -727,12 +724,12 @@ class MemoryCollector(Collector):
 
 class DiskCollector(Collector):
     system_lang_mapping = {
-        'utilization_of_mountpoint':     {'zn_cn': '已用%', 'en_us': 'Use%'},
-        'used_bytes_of_mountpoint':      {'zn_cn': '已用', 'en_us': 'Used'},
-        'available_bytes_of_mountpoint': {'zn_cn': '可用', 'en_us': 'Available'},
-        'filesystems':              {'zn_cn': '文件系统', 'en_us': 'Filesystem'},
-        'filesystem_types':              {'zn_cn': '类型', 'en_us': 'Type'},
-        'mountpoints':                   {'zn_cn': '挂载点', 'en_us': 'Mounted'}
+        'utilization_of_mountpoint':     {'zh_cn': '已用%', 'en_us': 'Use%'},
+        'used_bytes_of_mountpoint':      {'zh_cn': '已用', 'en_us': 'Used'},
+        'available_bytes_of_mountpoint': {'zh_cn': '可用', 'en_us': 'Available'},
+        'filesystems':              {'zh_cn': '文件系统', 'en_us': 'Filesystem'},
+        'filesystem_types':              {'zh_cn': '类型', 'en_us': 'Type'},
+        'mountpoints':                   {'zh_cn': '挂载点', 'en_us': 'Mounted'}
     }
 
     def system_lang_selector(func) -> Callable[['DiskCollector'], Callable]:
