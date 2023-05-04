@@ -10,7 +10,6 @@ import gqylpy as __
 import re
 import sys
 import time
-import copy
 import socket
 import select
 import inspect
@@ -561,23 +560,23 @@ config_struct = DataStruct({
 
 
 def output_config() -> None:
-    config: gdict = copy.deepcopy(cnf)
+    cnf2: gdict = cnf.deepcopy()
 
-    config.basedir = config.basedir.name
-    config.server  = str(config.server)
+    cnf2.basedir = cnf2.basedir.name
+    cnf2.server  = str(cnf2.server)
 
-    for i, wrapper in enumerate(config.metrics):
-        config.metrics[i] = wrapper._name
+    for i, wrapper in enumerate(cnf2.metrics):
+        cnf2.metrics[i] = wrapper._name
 
-    for node in config.nodes:
+    for node in cnf2.nodes:
         node.password = None
         if 'ssh' in node:
             node.ssh = str(node.ssh)
         if 'metrics' in node:
             node.metrics = [wrapper._name for wrapper in node.metrics]
 
-    config: str = yaml.dump(config, allow_unicode=True, sort_keys=False)
-    glog.info(f'configuration as follows: \n{config}')
+    cnf2: str = yaml.dump(cnf2, allow_unicode=True, sort_keys=False)
+    glog.info(f'configuration as follows: \n{cnf2}')
 
 
 class Collector(metaclass=funccache):
