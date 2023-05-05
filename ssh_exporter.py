@@ -639,7 +639,7 @@ class CPUCollector(Collector):
     @property
     def count(self) -> str:
         return self.ssh.cmd('''
-            grep "^physical id" /proc/cpuinfo | sort | uniq | wc -l
+            grep "^processor" /proc/cpuinfo | sort | uniq | wc -l
         ''').output_else_raise()
 
     @property
