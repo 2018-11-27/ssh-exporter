@@ -26,7 +26,8 @@ import yaml
 import prometheus_client
 
 import funccache
-import gqylpy_log as glog
+import gqylpy_exception as ge
+import gqylpy_log       as glog
 
 from gqylpy_datastruct import DataStruct
 from gqylpy_dict       import gdict
@@ -238,15 +239,22 @@ def init_socket(config: gdict) -> socket.socket:
     return skt
 
 
+def whether_auto_sudo(nodes: list) -> list:
+    for node in nodes:
+        if not ('auto_sudo' in node or node.username == 'root'):
+            node.auto_sudo = True
+    return nodes
+
+
 def init_ssh_connection(nodes: list) -> list:
     node_number: int = len(nodes)
 
-    if node_number < 10:
-        for node in nodes:
-            init_ssh_connection_each(node)
-    else:
+    if node_number > 1:
         with ThreadPoolExecutor(node_number, 'InitSSHConnection') as pool:
             pool.map(init_ssh_connection_each, nodes)
+    else:
+        for node in nodes:
+            init_ssh_connection_each(node)
 
     return nodes
 
@@ -271,7 +279,7 @@ def init_ssh_connection_each(node: gdict):
         ).output_else_raise()
 
         node.system_lang = ssh.cmd('echo $LANG').output_else_raise()[:5].lower()
-    except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
+    except Exception as e:
         node.ip = ip
         node.update(not_ssh_params)
 
@@ -470,8 +478,7 @@ config_struct = DataStruct({
                 },
                 'auto_sudo': {
                     type   : bool,
-                    default: True,
-                    params : [delete_empty]
+                    params : [optional, delete_empty]
                 },
                 'reconnect': {
                     type   : bool,
@@ -506,7 +513,7 @@ config_struct = DataStruct({
                 }
             }
         },
-        callback: init_ssh_connection,
+        callback: lambda x: init_ssh_connection(whether_auto_sudo(x)),
         ignore_if_in: [[]]
     },
     'collector': {
@@ -559,6 +566,7 @@ config_struct = DataStruct({
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
 
 
+@ge.TryExcept(Exception, silent_exc=True)
 def output_config() -> None:
     cnf2: gdict = cnf.deepcopy()
 
