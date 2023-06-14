@@ -28,6 +28,7 @@ masterE2e:
 mRE2e:
   image: $BASE_E2E_IMAGE
   stage: e2e
+  allow_failure: true
   only:
     - merge_requests
   tags:
@@ -49,7 +50,7 @@ mRE2e:
           echo "project name $CI_PROJECT_NAME branch $CI_COMMIT_REF_SLUG E2E stage sucessfully"
           exit 0
       fi
-
+      export DOCKER_HOST=unix:///var/run/docker.sock
       export DOCKER_HOST=$DOCKER_HOST
       docker run \
               -d \

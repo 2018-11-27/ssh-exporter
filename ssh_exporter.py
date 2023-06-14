@@ -1,10 +1,3 @@
-"""
-Copyright (c) 2022 Lenovo. All right reserved.
-Confidential and Proprietary
-
-@date: 2022.12.05 11:02:43
-@author: zhuyk4@lenovo.com
-"""
 import gqylpy as __
 
 import re
@@ -26,8 +19,7 @@ import yaml
 import prometheus_client
 
 import funccache
-import gqylpy_exception as ge
-import gqylpy_log       as glog
+import gqylpy_log as glog
 
 from gqylpy_datastruct import DataStruct
 from gqylpy_dict       import gdict
@@ -439,9 +431,10 @@ config_struct = DataStruct({
                     params : [delete_empty]
                 },
                 'username': {
-                    type   : str,
-                    default: 'ssh_exporter',
-                    params : [delete_empty]
+                    type    : str,
+                    default : 'ssh_exporter',
+                    params  : [delete_empty],
+                    callback: lambda x: x.strip()
                 },
                 'password': {
                     type  : str,
@@ -566,7 +559,6 @@ config_struct = DataStruct({
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
 
 
-@ge.TryExcept(Exception, silent_exc=True)
 def output_config() -> None:
     cnf2: gdict = cnf.deepcopy()
 
@@ -1240,7 +1232,11 @@ if __name__ == '__main__':
 
     cnf = gdict(yaml.safe_load(root['config.yml'].open.rb()), basedir=root)
     config_struct.verify(cnf)
-    output_config()
+
+    try:
+        output_config()
+    except Exception:
+        pass
 
     index = b'''
         <!DOCTYPE html>
@@ -1276,7 +1272,7 @@ if __name__ == '__main__':
                     glog.info('GET /<any> 200')
                 read_event.sendall(b'HTTP/1.1 200 OK\r\n\r\n' + response)
             except Exception as ee:
-                glog.error(f'server error, {ee.__class__}: {ee}')
+                glog.error(f'server error, {ee.__class__.__name__}: {ee}')
             finally:
                 rlist.remove(read_event)
                 read_event.close()

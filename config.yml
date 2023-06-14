@@ -1,28 +1,16 @@
 nodes:
   - ip: 10.121.118.101
     port: 22
-    username: isddc
+    username: lenovo
     password: Pass@w0rd
     device_id: 1
     device_name: 服务器A
-#  - ip: 10.121.12.150
-#    port: 22
-#    username: lenovo
-#    password: j5CxB#MxzL2syq_=
-#    device_id: 2
-#    device_name: b
   - ip: 10.121.124.11
     port: 22
     username: lenovo
     password: Lenovo_ops@2022
     device_id: 3
     device_name: c
-#  - ip: 10.121.13.93
-#    username: root
-#    password: Lenovo_ops@2020
-#    port: 22
-#    device_id: 4b1cb664-ee08-4a44-b140-7755ca188f21
-#    device_name: 平台
 
 metrics:
   - ssh_cpu_utilization
