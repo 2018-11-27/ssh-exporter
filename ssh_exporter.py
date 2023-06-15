@@ -224,6 +224,7 @@ def init_socket(config: gdict) -> socket.socket:
     skt.setblocking(False)
 
     skt.bind((host, port))
+    skt.settimeout(config['timeout'])
     skt.listen()
 
     glog.info(f'bind http://{host}:{port}')
@@ -271,7 +272,7 @@ def init_ssh_connection_each(node: gdict):
         ).output_else_raise()
 
         node.system_lang = ssh.cmd('echo $LANG').output_else_raise()[:5].lower()
-    except Exception as e:
+    except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
         node.ip = ip
         node.update(not_ssh_params)
 
@@ -550,6 +551,14 @@ config_struct = DataStruct({
                 option: '--port',
                 verify: lambda x: 0 < x < 65536,
                 params: [delete_empty]
+            },
+            'timeout': {
+                type:     (int, str),
+                default:  15,
+                env:      'SERVER_TIMEOUT',
+                option:   '--server-timeout',
+                params:   [delete_empty],
+                callback: Time2Second
             }
         },
         default: {},
@@ -733,16 +742,8 @@ class DiskCollector(Collector):
 
     def system_lang_selector(func) -> Callable[['DiskCollector'], Callable]:
         def inner(self: 'DiskCollector') -> Any:
-            system_lang_mapping: dict = self.system_lang_mapping[func.__name__]
-            try:
-                title: str = system_lang_mapping[self.system_lang]
-            except KeyError:
-                glog.warning(
-                    f'system language "{self.system_lang}" mapping undefined, '
-                    'will try to use the default language "en_us", '
-                    f'node is "{self.ssh.hostname}".'
-                )
-                title: str = system_lang_mapping['en_us']
+            mapping: dict = self.system_lang_mapping[func.__name__]
+            title: str = mapping.get(self.system_lang, mapping['en_us'])
             return func(self, title=title)
         return inner
 
@@ -1232,11 +1233,7 @@ if __name__ == '__main__':
 
     cnf = gdict(yaml.safe_load(root['config.yml'].open.rb()), basedir=root)
     config_struct.verify(cnf)
-
-    try:
-        output_config()
-    except Exception:
-        pass
+    output_config()
 
     index = b'''
         <!DOCTYPE html>
@@ -1258,9 +1255,12 @@ if __name__ == '__main__':
     while True:
         for read_event in select.select(rlist, [], [])[0]:
             if read_event is server:
-                rlist.append(server.accept()[0])
+                fd, addr = server.accept()
+                rlist.append(fd)
+                glog.debug(f'create connection, remote address: {addr}')
                 continue
             try:
+                read_event.settimeout(cnf.server.timeout)
                 body: bytes = read_event.recv(8192)
                 if body[:21] == b'GET /metrics HTTP/1.1':
                     start = time.time()
@@ -1272,7 +1272,7 @@ if __name__ == '__main__':
                     glog.info('GET /<any> 200')
                 read_event.sendall(b'HTTP/1.1 200 OK\r\n\r\n' + response)
             except Exception as ee:
-                glog.error(f'server error, {ee.__class__.__name__}: {ee}')
+                glog.error(f'server error: {repr(ee)}, clients: {rlist[1:]}')
             finally:
                 rlist.remove(read_event)
                 read_event.close()
