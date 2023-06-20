@@ -1,5 +1,3 @@
-# Copyright (c) 2022 Lenovo. All right reserved.
-# Confidential and Proprietary
 FROM harbor.lenovo.com/base/python:3.9.9-alpine3.14
 
 ARG BASEDIR=/usr/src/
@@ -9,7 +7,13 @@ WORKDIR $BASEDIR
 
 RUN sed -i 's#https://dl-cdn.alpinelinux.org#http://pip.lenovo.com//apk/repository/apk-ustc/#g' /etc/apk/repositories
 RUN apk add --no-cache gcc freetds-dev libffi-dev libc-dev binutils make
-RUN pip install -r requirements.txt --no-cache-dir -i http://pip.lenovo.com/repository/pypi-aliyun/simple/ --trusted-host pip.lenovo.com
+
+RUN pip install -r requirements.txt \
+    -i http://pip.lenovo.com/repository/pypi-aliyun/simple/ \
+    --trusted-host pip.lenovo.com
+
+RUN sed -i "668s/v.*/data[key] = copy.deepcopy(blueprint['default']); value = data[key]/" \
+    /usr/local/lib/python3.9/site-packages/gqylpy_datastruct/g\ datastruct.py
 
 EXPOSE 80
 

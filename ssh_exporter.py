@@ -332,10 +332,14 @@ def init_ssh_connection_again(node: gdict, *, __nodes__=[]) -> None:
 
 
 def init_collector_ignore_fstype(ignore_fstype: Union[list, str]) -> str:
+    if not ignore_fstype:
+        return ''
+
     if ignore_fstype.__class__ is list:
         x: str = ' -x '.join(ignore_fstype)
     else:
         x: str = ' -x '.join(i.strip() for i in ignore_fstype.split(','))
+
     return '-x ' + x
 
 
@@ -371,15 +375,13 @@ enum         = 'enum'
 verify       = 'verify'
 params       = 'params'
 optional     = 'optional'
-delete_none  = 'delete_none'
 delete_empty = 'delete_empty'
-ignore_if_in = 'ignore_if_in'
 callback     = 'callback'
 
 re_ip     = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
 re_domain = r'^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$'
 
-config_struct = DataStruct({
+Config = DataStruct({
     'log': {
         branch: {
             'level': {
@@ -413,7 +415,7 @@ config_struct = DataStruct({
                 params : [delete_empty]
             }
         },
-        default: {},
+        default : {},
         params  : [delete_empty],
         callback: lambda x: glog.__init__(__name__, **x, gname=__name__) and x
     },
@@ -484,7 +486,7 @@ config_struct = DataStruct({
                     default: 0
                 },
                 'device_name': {
-                    type: str,
+                    type   : str,
                     default: ''
                 },
                 'metrics': {
@@ -497,18 +499,15 @@ config_struct = DataStruct({
                     branch: {
                         'ignore_fstype': {
                             type    : list,
-                            env     : 'COLLECTOR_IGNORE_FSTYPE',
-                            option  : '--collector-ignore-fstype',
-                            params  : [delete_empty],
-                            callback: lambda x: '-x ' + ' -x '.join(x)
+                            params  : [optional],
+                            callback: init_collector_ignore_fstype
                         }
                     },
                     params: [optional, delete_empty]
                 }
             }
         },
-        callback: lambda x: init_ssh_connection(whether_auto_sudo(x)),
-        ignore_if_in: [[]]
+        callback: lambda x: init_ssh_connection(whether_auto_sudo(x))
     },
     'collector': {
         branch: {
@@ -521,10 +520,8 @@ config_struct = DataStruct({
                 callback: init_collector_ignore_fstype
             }
         },
-        default: {
-            'ignore_fstype': ['tmpfs', 'devtmpfs', 'overlay']
-        },
-        params: [delete_empty]
+        default: {},
+        params : [delete_empty]
     },
     'metrics': {
         type    : list,
@@ -536,33 +533,33 @@ config_struct = DataStruct({
     'server': {
         branch: {
             'host': {
-                type: str,
+                type   : str,
                 default: '0.0.0.0',
-                env: 'HOST',
-                option: '--host',
-                verify: [re_ip, re_domain, lambda x: x == 'localhost'],
-                params: [delete_empty]
+                env    : 'HOST',
+                option : '--host',
+                verify : [re_ip, re_domain, lambda x: x == 'localhost'],
+                params : [delete_empty]
             },
             'port': {
-                type: (int, str),
-                coerce: int,
+                type   : (int, str),
+                coerce : int,
                 default: 80,
-                env: 'PORT',
-                option: '--port',
-                verify: lambda x: 0 < x < 65536,
-                params: [delete_empty]
+                env    : 'PORT',
+                option : '--port',
+                verify : lambda x: 0 < x < 65536,
+                params : [delete_empty]
             },
             'timeout': {
-                type:     (int, str),
-                default:  15,
-                env:      'SERVER_TIMEOUT',
-                option:   '--server-timeout',
-                params:   [delete_empty],
+                type    : (int, str),
+                default : 15,
+                env     : 'SERVER_TIMEOUT',
+                option  : '--server-timeout',
+                params  : [delete_empty],
                 callback: Time2Second
             }
         },
-        default: {},
-        params: [delete_empty],
+        default : {},
+        params  : [delete_empty],
         callback: init_socket
     }
 }, etitle='Config', eraise=True, ignore_undefined_data=True)
@@ -1232,7 +1229,7 @@ if __name__ == '__main__':
     root: Directory = SystemPath(__file__).dirname
 
     cnf = gdict(yaml.safe_load(root['config.yml'].open.rb()), basedir=root)
-    config_struct.verify(cnf)
+    Config.verify(cnf)
     output_config()
 
     index = b'''

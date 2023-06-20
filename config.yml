@@ -1,7 +1,7 @@
 nodes:
   - ip: 10.121.118.101
     port: 22
-    username: lenovo
+    username: isddc
     password: Pass@w0rd
     device_id: 1
     device_name: 服务器A
