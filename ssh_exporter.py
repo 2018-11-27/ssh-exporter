@@ -26,7 +26,7 @@ from gqylpy_dict       import gdict
 from gqylpy_ssh        import GqylpySSH
 from gqylpy_ssh        import SSHException
 from gqylpy_ssh        import NoValidConnectionsError
-from systempath        import SystemPath
+from systempath        import File
 from systempath        import Directory
 
 from prometheus_client         import generate_latest
@@ -376,6 +376,7 @@ verify       = 'verify'
 params       = 'params'
 optional     = 'optional'
 delete_empty = 'delete_empty'
+ignore_if_in = 'ignore_if_in'
 callback     = 'callback'
 
 re_ip     = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
@@ -507,7 +508,8 @@ Config = DataStruct({
                 }
             }
         },
-        callback: lambda x: init_ssh_connection(whether_auto_sudo(x))
+        callback    : lambda x: init_ssh_connection(whether_auto_sudo(x)),
+        ignore_if_in: [[]]
     },
     'collector': {
         branch: {
@@ -1226,7 +1228,7 @@ class MetricsHandler:
 
 
 if __name__ == '__main__':
-    root: Directory = SystemPath(__file__).dirname
+    root: Directory = File(__file__).dirname
 
     cnf = gdict(yaml.safe_load(root['config.yml'].open.rb()), basedir=root)
     Config.verify(cnf)
@@ -1247,6 +1249,8 @@ if __name__ == '__main__':
     '''
 
     server: socket.socket = cnf.server
+    http_timeout: int = cnf.server.timeout
+
     rlist = [server]
 
     while True:
@@ -1257,7 +1261,7 @@ if __name__ == '__main__':
                 glog.debug(f'create connection, remote address: {addr}')
                 continue
             try:
-                read_event.settimeout(cnf.server.timeout)
+                read_event.settimeout(http_timeout)
                 body: bytes = read_event.recv(8192)
                 if body[:21] == b'GET /metrics HTTP/1.1':
                     start = time.time()
