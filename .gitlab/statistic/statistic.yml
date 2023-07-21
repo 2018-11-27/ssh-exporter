@@ -5,7 +5,7 @@ releaseStatistic:
   variables:
     BASE_STATISTICS_REPORT_PROJECT_HTTP: "https://igitlab.lenovo.com/devops/statistic-report.git"
     BASE_STATISTICS_REPORT_FILE: "statistic-code-lines.csv"
-    BASE_STATISTICS_REPORT_TITLE: "repository-url-http,ref,line-quantities,remark"
+    BASE_STATISTICS_REPORT_TITLE: "repository-url-http,ref,line-quantities,ref-storage-size(k/m/g),remark"
   rules: !reference [.defaultRules, branches]
   script:
     # You should add or modify your Statistic commands in this scope
@@ -33,13 +33,14 @@ releaseStatistic:
         echo "$BASE_STATISTICS_REPORT_TITLE" >> $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
       fi
       export CI_PROJECT_LINES=`git ls-files | xargs cat | wc -l`
+      export CI_REF_STORAGE_SIZE=`du -sh .`
       grep $CI_PROJECT_URL $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export GREP_RES=1
       if [ "$GREP_RES" == "1" ]
       then
-        echo "$CI_PROJECT_URL/-/tree/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" >> \
+        echo "$CI_PROJECT_URL/-/tree/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,$CI_REF_STORAGE_SIZE,"..."" >> \
         $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
       else
-        sed -i "s#^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME.*#$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."#g" \
+        sed -i "s#^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME.*#$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,$CI_REF_STORAGE_SIZE,"..."#g" \
         $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
         # sed -i "/^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME/c$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" \
       fi
@@ -48,7 +49,7 @@ releaseStatistic:
         cd $PROJECT_DIR
         echo `pwd`
         git add .
-        git commit -a -m "Auto-Statistic $CI_COMMIT_REF_NAME In $CI_PROJECT_URL Line-Quantities" || echo "Git Commit Successfully"
+        git commit -a -m "Auto-Statistic $CI_COMMIT_REF_NAME In $CI_PROJECT_URL Line-Quantities And Ref Repo-Storage-Size" || echo "Git Commit Successfully"
         git push --set-upstream origin $CI_COMMIT_REF_NAME 
       fi
       rm -rf $CI_PROJECT_DIR/$PROJECT_DIR || echo "Git Push $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE Successfully"
@@ -65,7 +66,7 @@ masterStatistic:
   variables:
     BASE_STATISTICS_REPORT_PROJECT_HTTP: "https://igitlab.lenovo.com/devops/statistic-report.git"
     BASE_STATISTICS_REPORT_FILE: "statistic-code-lines.csv"
-    BASE_STATISTICS_REPORT_TITLE: "repository-url-http,ref,line-quantities,remark"
+    BASE_STATISTICS_REPORT_TITLE: "repository-url-http,ref,line-quantities,ref-storage-size(k/m/g),remark"
   script:
     # You should add or modify your Statistic commands in this scope
     # Start
@@ -92,13 +93,14 @@ masterStatistic:
         echo "$BASE_STATISTICS_REPORT_TITLE" >> $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE
       fi
       export CI_PROJECT_LINES=`git ls-files | xargs cat | wc -l`
+      export CI_REF_STORAGE_SIZE=`du -sh .`
       grep $CI_PROJECT_URL $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export GREP_RES=1
       if [ "$GREP_RES" == "1" ]
       then
-        echo "$CI_PROJECT_URL/-/tree/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" >> \
+        echo "$CI_PROJECT_URL/-/tree/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,$CI_REF_STORAGE_SIZE,"..."" >> \
         $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
       else
-        sed -i "s#^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME.*#$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."#g" \
+        sed -i "s#^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME.*#$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,$CI_REF_STORAGE_SIZE,"..."#g" \
         $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE || export SED_RES=1
         # sed -i "/^$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME/c$CI_PROJECT_URL\/-\/tree\/$CI_COMMIT_REF_NAME,$CI_COMMIT_REF_NAME,$CI_PROJECT_LINES,"..."" \
       fi
@@ -107,7 +109,7 @@ masterStatistic:
         cd $PROJECT_DIR
         echo `pwd`
         git add .
-        git commit -a -m "Auto-Statistic $CI_COMMIT_REF_NAME In $CI_PROJECT_URL Line-quantities" || echo "Git Commit Successfully"
+        git commit -a -m "Auto-Statistic $CI_COMMIT_REF_NAME In $CI_PROJECT_URL Line-quantities And Ref Repo-Storage-Size" || echo "Git Commit Successfully"
         git push --set-upstream origin $CI_COMMIT_REF_NAME 
       fi
       rm -rf $CI_PROJECT_DIR/$PROJECT_DIR || echo "Git Push $PROJECT_DIR/$BASE_STATISTICS_REPORT_FILE Successfully"
