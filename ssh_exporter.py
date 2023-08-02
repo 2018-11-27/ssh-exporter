@@ -1,10 +1,12 @@
 import gqylpy as __
 
+import os
 import re
 import sys
 import time
 import socket
 import select
+import pprint
 import inspect
 import threading
 
@@ -33,10 +35,15 @@ from prometheus_client         import generate_latest
 from prometheus_client.metrics import MetricWrapperBase
 from prometheus_client.metrics import Gauge
 
-from typing import Union, Generator, Callable, Any
+from typing import Final, Union, Generator, Callable, Any
 
+basedir: Final[Directory] = File(__file__, strict=True).dirname
 
-metrics = gdict(
+god: Final = gdict(
+    yaml.safe_load(basedir['config.yml'].open.rb()), root=basedir
+)
+
+metrics: Final = gdict(
     ssh_cpu_utilization={
         'type'         : 'Gauge',
         'documentation': 'utilization of cpu used',
@@ -217,26 +224,19 @@ class Time2Second(
 
 
 def init_socket(config: gdict) -> socket.socket:
-    host, port = config['host'], config['port']
+    host, port = config.host, config.port
 
     skt = socket.socket(family=AF_INET, type=SOCK_STREAM)
     skt.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
     skt.setblocking(False)
 
     skt.bind((host, port))
-    skt.settimeout(config['timeout'])
+    skt.settimeout(config.timeout)
     skt.listen()
 
     glog.info(f'bind http://{host}:{port}')
 
     return skt
-
-
-def whether_auto_sudo(nodes: list) -> list:
-    for node in nodes:
-        if not ('auto_sudo' in node or node.username == 'root'):
-            node.auto_sudo = True
-    return nodes
 
 
 def init_ssh_connection(nodes: list) -> list:
@@ -246,8 +246,7 @@ def init_ssh_connection(nodes: list) -> list:
         with ThreadPoolExecutor(node_number, 'InitSSHConnection') as pool:
             pool.map(init_ssh_connection_each, nodes)
     else:
-        for node in nodes:
-            init_ssh_connection_each(node)
+        init_ssh_connection_each(nodes[0])
 
     return nodes
 
@@ -272,7 +271,10 @@ def init_ssh_connection_each(node: gdict):
         ).output_else_raise()
 
         node.system_lang = ssh.cmd('echo $LANG').output_else_raise()[:5].lower()
-    except (SSHException, NoValidConnectionsError, TimeoutError, OSError) as e:
+    except (
+            SSHException, NoValidConnectionsError,
+            TimeoutError, OSError, EOFError
+    ) as e:
         node.ip = ip
         node.update(not_ssh_params)
 
@@ -314,7 +316,7 @@ def init_ssh_connection_again(node: gdict, *, __nodes__=[]) -> None:
                 init_ssh_connection_each(n)
             except (
                     SSHException, NoValidConnectionsError,
-                    TimeoutError, OSError
+                    TimeoutError, OSError, EOFError
             ):
                 glog.warning(f'try SSH connection to "{n.ip}" failed once.')
                 i -= 1
@@ -382,7 +384,7 @@ callback     = 'callback'
 re_ip     = r'^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$'
 re_domain = r'^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$'
 
-Config = DataStruct({
+DataStruct({
     'log': {
         branch: {
             'level': {
@@ -431,7 +433,7 @@ Config = DataStruct({
                     type   : (int, str),
                     coerce : int,
                     default: 22,
-                    verify : lambda x: 0 < x < 65536,
+                    verify : lambda x: -1 < x < 1 << 16,
                     params : [delete_empty]
                 },
                 'username': {
@@ -475,6 +477,7 @@ Config = DataStruct({
                 },
                 'auto_sudo': {
                     type   : bool,
+                    default: True,
                     params : [optional, delete_empty]
                 },
                 'reconnect': {
@@ -508,7 +511,7 @@ Config = DataStruct({
                 }
             }
         },
-        callback    : lambda x: init_ssh_connection(whether_auto_sudo(x)),
+        callback    : lambda x: init_ssh_connection(x),
         ignore_if_in: [[]]
     },
     'collector': {
@@ -548,12 +551,12 @@ Config = DataStruct({
                 default: 80,
                 env    : 'PORT',
                 option : '--port',
-                verify : lambda x: 0 < x < 65536,
+                verify : lambda x: -1 < x < 1 << 16,
                 params : [delete_empty]
             },
             'timeout': {
                 type    : (int, str),
-                default : 15,
+                default : '1m',
                 env     : 'SERVER_TIMEOUT',
                 option  : '--server-timeout',
                 params  : [delete_empty],
@@ -564,27 +567,7 @@ Config = DataStruct({
         params  : [delete_empty],
         callback: init_socket
     }
-}, etitle='Config', eraise=True, ignore_undefined_data=True)
-
-
-def output_config() -> None:
-    cnf2: gdict = cnf.deepcopy()
-
-    cnf2.basedir = cnf2.basedir.name
-    cnf2.server  = str(cnf2.server)
-
-    for i, wrapper in enumerate(cnf2.metrics):
-        cnf2.metrics[i] = wrapper._name
-
-    for node in cnf2.nodes:
-        node.password = None
-        if 'ssh' in node:
-            node.ssh = str(node.ssh)
-        if 'metrics' in node:
-            node.metrics = [wrapper._name for wrapper in node.metrics]
-
-    cnf2: str = yaml.dump(cnf2, allow_unicode=True, sort_keys=False)
-    glog.info(f'configuration as follows: \n{cnf2}')
+}, etitle='Config', eraise=True, ignore_undefined_data=True).verify(god)
 
 
 class Collector(metaclass=funccache):
@@ -670,7 +653,7 @@ class MemoryCollector(Collector):
 
     @property
     def utilization(self) -> float:
-        return 1 - ((self.free + self.buffers + self.cached) / self.total)
+        return 100 - self.available / self.total * 100
 
     @property
     def utilization_top5(self) -> Generator:
@@ -689,11 +672,15 @@ class MemoryCollector(Collector):
 
     @property
     def available_bytes(self) -> int:
-        return (self.total - (self.free + self.buffers + self.cached)) * 1024
+        return (self.total - self.available) * 1024
 
     @property
     def available_swap_bytes(self) -> int:
         return self.swap_free * 1024
+
+    @property
+    def available(self) -> int:
+        return self.free + self.buffers + self.cached
 
     @property
     def total(self) -> int:
@@ -832,25 +819,28 @@ class MetricsHandler:
 
     @classmethod
     def get(cls) -> Generator:
-        nodes = [node for node in cnf.nodes if 'ssh' in node]
+        nodes = [node for node in god.nodes if 'ssh' in node]
 
-        pool = ThreadPoolExecutor((len(nodes) * len(metrics)) or 1, 'Collector')
+        pool = ThreadPoolExecutor(
+            max_workers=min(len(nodes) * len(metrics), os.cpu_count() * 5),
+            thread_name_prefix='Collector'
+        )
 
         for node in nodes:
-            collector_config: gdict = node.get('collector', cnf.collector)
+            collector_config: gdict = node.get('collector', god.collector)
 
             cpu     = CPUCollector    (node, config=collector_config)
             memory  = MemoryCollector (node, config=collector_config)
             disk    = DiskCollector   (node, config=collector_config)
             network = NetworkCollector(node, config=collector_config)
 
-            for wrapper in node.get('metrics', cnf.metrics):
+            for wrapper in node.get('metrics', god.metrics):
                 pool.submit(
                     cls.get_metric, wrapper, node,
                     cpu=cpu, memory=memory, disk=disk, network=network
                 )
 
-        pool.shutdown(wait=True)
+        pool.shutdown()
 
         for w in metrics.values():
             try:
@@ -868,7 +858,7 @@ class MetricsHandler:
             getattr(cls, f'get_metric__{wrapper._name}')(
                 wrapper, node, **collectors
             )
-        except (SSHException, TimeoutError, OSError):
+        except (SSHException, TimeoutError, OSError, EOFError):
             del node.ssh, node.hostname, node.hostuuid
             glog.warning(
                 f'SSH connection to "{node.ip}" is break, will try '
@@ -1228,11 +1218,10 @@ class MetricsHandler:
 
 
 if __name__ == '__main__':
-    root: Directory = File(__file__).dirname
-
-    cnf = gdict(yaml.safe_load(root['config.yml'].open.rb()), basedir=root)
-    Config.verify(cnf)
-    output_config()
+    glog.info(
+        'configuration as follows:\n',
+        pprint.pformat(god, sort_dicts=False)
+    )
 
     index = b'''
         <!DOCTYPE html>
@@ -1248,10 +1237,10 @@ if __name__ == '__main__':
         </html>
     '''
 
-    server: socket.socket = cnf.server
-    http_timeout: int = cnf.server.timeout
+    server: socket.socket = god.server
+    http_timeout: int = god.server.timeout
 
-    rlist = [server]
+    rlist = [god.server]
 
     while True:
         for read_event in select.select(rlist, [], [])[0]:
