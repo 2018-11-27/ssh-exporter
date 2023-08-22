@@ -271,10 +271,7 @@ def init_ssh_connection_each(node: gdict):
         ).output_else_raise()
 
         node.system_lang = ssh.cmd('echo $LANG').output_else_raise()[:5].lower()
-    except (
-            SSHException, NoValidConnectionsError,
-            TimeoutError, OSError, EOFError
-    ) as e:
+    except (SSHException, NoValidConnectionsError, OSError, EOFError) as e:
         node.ip = ip
         node.update(not_ssh_params)
 
@@ -314,10 +311,7 @@ def init_ssh_connection_again(node: gdict, *, __nodes__=[]) -> None:
                 n: gdict = __nodes__[i]
             try:
                 init_ssh_connection_each(n)
-            except (
-                    SSHException, NoValidConnectionsError,
-                    TimeoutError, OSError, EOFError
-            ):
+            except (SSHException, NoValidConnectionsError, OSError, EOFError):
                 glog.warning(f'try SSH connection to "{n.ip}" failed once.')
                 i -= 1
             else:
@@ -858,7 +852,7 @@ class MetricsHandler:
             getattr(cls, f'get_metric__{wrapper._name}')(
                 wrapper, node, **collectors
             )
-        except (SSHException, TimeoutError, OSError, EOFError):
+        except (SSHException, OSError, EOFError):
             del node.ssh, node.hostname, node.hostuuid
             glog.warning(
                 f'SSH connection to "{node.ip}" is break, will try '
