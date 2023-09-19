@@ -1232,25 +1232,29 @@ if __name__ == '__main__':
     '''
 
     server: socket.socket = god.server
-    http_timeout: int = god.server.timeout
+    http_timeout: int = server.timeout
+    next_collect_time = 0
 
-    rlist = [god.server]
+    rlist = [server]
 
     while True:
         for read_event in select.select(rlist, [], [])[0]:
             if read_event is server:
                 fd, addr = server.accept()
                 rlist.append(fd)
-                glog.debug(f'create connection, remote address: {addr}')
+                glog.debug(f'establish connection, remote address: {addr}')
                 continue
             try:
                 read_event.settimeout(http_timeout)
                 body: bytes = read_event.recv(8192)
                 if body[:21] == b'GET /metrics HTTP/1.1':
                     start = time.time()
-                    response: bytes = b''.join(MetricsHandler.get())
-                    runtime = round(time.time() - start, 2)
-                    glog.info(f'GET /metrics 200 (runtime:{runtime}s)')
+                    if time.time() > next_collect_time:
+                        metrics_response: bytes = b''.join(MetricsHandler.get())
+                    response: bytes = metrics_response
+                    end = time.time()
+                    glog.info(f'GET /metrics 200 (runtime:{end - start:.2f}s)')
+                    next_collect_time = end + .01
                 else:
                     response: bytes = index
                     glog.info('GET /<any> 200')
