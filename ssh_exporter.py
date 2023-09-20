@@ -1249,7 +1249,7 @@ if __name__ == '__main__':
                 body: bytes = read_event.recv(8192)
                 if body[:21] == b'GET /metrics HTTP/1.1':
                     start = time.time()
-                    if time.time() > next_collect_time:
+                    if start > next_collect_time:
                         metrics_response: bytes = b''.join(MetricsHandler.get())
                     response: bytes = metrics_response
                     end = time.time()
