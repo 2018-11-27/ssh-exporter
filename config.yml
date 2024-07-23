@@ -1,11 +1,15 @@
 nodes:
-  - ip: 10.121.118.101
+  - ip: 192.168.1.101
     port: 22
-    username: lenovo
-    password: Pass@w0rd
-    device_id: 1
-    device_name: 服务器A
+    username: <username>
+    password: <password>
+  - ip: 192.168.1.102
+    port: 22
+    username: <username>
+    password: <password>
 
+# General metrics configuration; the listed indexes will be collected; the following are all supported indexes.
+# 通用指标配置；列出的指标将被采集；下面列出的是支持的所有指标。
 metrics:
   - ssh_cpu_utilization
   - ssh_cpu_utilization_user
@@ -26,3 +30,10 @@ metrics:
   - ssh_disk_write_bytes_total
   - ssh_network_receive_bytes_total
   - ssh_network_transmit_bytes_total
+
+log:
+  level: INFO
+  output: [file,stream]
+  logfile: /var/log/ssh_exporter.log
+  datefmt: '%F %T'
+  logfmt: '[%(asctime)s] [%(funcName)s.line%(lineno)d] [%(levelname)s] %(message)s'
